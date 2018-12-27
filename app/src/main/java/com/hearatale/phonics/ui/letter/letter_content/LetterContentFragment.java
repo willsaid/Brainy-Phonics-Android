@@ -1,0 +1,373 @@
+package com.hearatale.phonics.ui.letter.letter_content;
+
+
+import android.animation.AnimatorSet;
+import android.graphics.Typeface;
+import android.media.MediaPlayer;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.view.ViewCompat;
+import android.support.v7.widget.LinearLayoutCompat;
+import android.text.Spanned;
+import android.text.TextUtils;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.AnimationUtils;
+import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.OvershootInterpolator;
+import android.view.animation.RotateAnimation;
+import android.view.animation.ScaleAnimation;
+import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
+
+import com.hearatale.phonics.Application;
+import com.hearatale.phonics.R;
+import com.hearatale.phonics.data.AppDataManager;
+import com.hearatale.phonics.data.model.event.ProgressPuzzleEvent;
+import com.hearatale.phonics.data.model.phonics.letters.LetterModel;
+import com.hearatale.phonics.data.model.phonics.letters.TimedAudioInfoModel;
+import com.hearatale.phonics.service.AudioPlayerHelper;
+import com.hearatale.phonics.utils.Config;
+import com.hearatale.phonics.utils.FontsHelper;
+import com.hearatale.phonics.utils.Utils;
+import com.hearatale.phonics.utils.glide.GlideApp;
+
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
+
+/**
+ * A simple {@link Fragment} subclass.
+ * create an instance of this fragment.
+ */
+public class LetterContentFragment extends Fragment {
+
+    private static String ARG_LETTER_MODE = "ARG_LETTER_MODE";
+
+    @BindView(R.id.text_view_letter)
+    TextView textViewLetter;
+
+    @BindView(R.id.text_view_first)
+    TextView textViewFirst;
+
+    @BindView(R.id.text_view_second)
+    TextView textViewSecond;
+
+    @BindView(R.id.text_view_third)
+    TextView textViewThird;
+
+    @BindView(R.id.image_first)
+    ImageView imageViewFirst;
+
+    @BindView(R.id.image_second)
+    ImageView imageViewSecond;
+
+    @BindView(R.id.image_third)
+    ImageView imageViewThird;
+
+    @BindView(R.id.check_mark)
+    ImageView checkMark;
+
+    @BindView(R.id.layout_first_word)
+    LinearLayoutCompat layoutFirstWord;
+
+    @BindView(R.id.layout_second_word)
+    LinearLayoutCompat layoutSecondWord;
+
+    @BindView(R.id.layout_third_word)
+    LinearLayoutCompat layoutThirdWord;
+
+    @BindView(R.id.frame_layout_letter)
+    ConstraintLayout layoutLetter;
+
+    LetterModel mLetterModel;
+    private boolean mCurrentPlaying = false;
+
+    UpdateViewListener updateViewListener;
+
+    boolean isValidView;
+
+    public void setUpdateViewListener(UpdateViewListener updateViewListener) {
+        this.updateViewListener = updateViewListener;
+    }
+
+    public LetterContentFragment() {
+        // Required empty public constructor
+    }
+
+    public static LetterContentFragment newInstance(LetterModel letterModel) {
+        LetterContentFragment fragment = new LetterContentFragment();
+        Bundle args = new Bundle();
+        args.putParcelable(ARG_LETTER_MODE, letterModel);
+        fragment.setArguments(args);
+        return fragment;
+
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (getArguments() != null) {
+            mLetterModel = getArguments().getParcelable(ARG_LETTER_MODE);
+        }
+    }
+
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View rootView = inflater.inflate(R.layout.fragment_letter_content, container, false);
+        ButterKnife.bind(this, rootView);
+        isValidView = true;
+        initViews();
+        visibleView();
+        return rootView;
+    }
+
+    private void initViews() {
+
+        //Text view
+        String letterText = mLetterModel.getDisplayString().toLowerCase();
+        textViewLetter.setText(letterText);
+
+        Spanned firstWord = getWordDecorator(0);
+        textViewFirst.setText(firstWord);
+        Spanned secondWord = getWordDecorator(1);
+        textViewSecond.setText(secondWord);
+        Spanned thirdWord = getWordDecorator(2);
+        textViewThird.setText(thirdWord);
+        //ImageView
+        String firstPath = Config.IMAGES_WORD_BY_LETTER_PATH +  mLetterModel.getPrimaryWords().get(0).getText() + ".jpg";
+        GlideApp.with(this).load(Uri.parse(firstPath)).into(imageViewFirst);
+
+        String secondPath = Config.IMAGES_WORD_BY_LETTER_PATH +  mLetterModel.getPrimaryWords().get(1).getText() + ".jpg";
+        GlideApp.with(this).load(Uri.parse(secondPath)).into(imageViewSecond);
+
+        String thirdPath = Config.IMAGES_WORD_BY_LETTER_PATH + mLetterModel.getPrimaryWords().get(2).getText() + ".jpg";
+        GlideApp.with(this).load(Uri.parse(thirdPath)).into(imageViewThird);
+
+        String displayLetter = mLetterModel.getSourceLetter() + "-" + mLetterModel.getSoundId();
+        int size = AppDataManager.getInstance().getCompletedPuzzlePieces(displayLetter).size();
+        checkMark.setVisibility(size == Config.PUZZLE_COLUMNS * Config.PUZZLE_ROWS ? View.VISIBLE : View.GONE);
+    }
+
+    public void visibleView() {
+        //Hidden all views contain words
+        setupAlphaForLayoutWord(false);
+        schedulePlaySoundAndAnimation();
+    }
+
+    private void setupAlphaForLayoutWord(boolean isVisible) {
+        float alpha = isVisible ? 1 : 0;
+        layoutFirstWord.setAlpha(alpha);
+        layoutSecondWord.setAlpha(alpha);
+        layoutThirdWord.setAlpha(alpha);
+    }
+
+    private Spanned getWordDecorator(int i) {
+        String text = mLetterModel.getPrimaryWords().get(i).getText();
+        return AppDataManager.getInstance()
+                .decorateWord(text,
+                        mLetterModel.getDisplayString().toLowerCase(),
+                        getResources().getColor(R.color.colorAccent));
+    }
+
+    private void schedulePlaySoundAndAnimation() {
+        mCurrentPlaying = true;
+        //Ensure animation replace fragment end (500ms) +  500ms delay
+        int startTime = 1000;
+        int timeBetween = 850;
+
+        if (updateViewListener != null) updateViewListener.showButtonQuiz(false);
+
+        animationAndPlayAudio(layoutLetter, startTime, mLetterModel.getPronunciationTiming(), null);
+        final int durationPronunciation = convertSecondStringToMilliSeconds(mLetterModel.getPronunciationTiming().getWordDuration());
+        startTime += (durationPronunciation == 0 ? 500 : durationPronunciation) + timeBetween;
+
+        TimedAudioInfoModel timedAudioInfo = mLetterModel.getPrimaryWords().get(0).getTimedAudioInfo();
+        final int durationFirstWord = convertSecondStringToMilliSeconds(timedAudioInfo.getWordDuration());
+        animationAndPlayAudio(layoutFirstWord, startTime, timedAudioInfo, null);
+        startTime += (durationFirstWord) + timeBetween;
+
+        TimedAudioInfoModel timedAudioInfo1 = mLetterModel.getPrimaryWords().get(1).getTimedAudioInfo();
+        final int durationSecondWord = convertSecondStringToMilliSeconds(timedAudioInfo1.getWordDuration());
+        animationAndPlayAudio(layoutSecondWord, startTime, timedAudioInfo1, null);
+        startTime += (durationSecondWord) + timeBetween;
+
+        TimedAudioInfoModel timedAudioInfo2 = mLetterModel.getPrimaryWords().get(2).getTimedAudioInfo();
+        animationAndPlayAudio(layoutThirdWord, startTime, timedAudioInfo2, new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {
+
+            }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                if (updateViewListener != null) {
+                    updateViewListener.showButtonQuiz(true);
+                }
+                mCurrentPlaying = false;
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {
+
+            }
+        });
+
+    }
+
+    private void animationAndPlayAudio(final View view, int startTime, final TimedAudioInfoModel audioInfo, final Animation.AnimationListener listener) {
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                if (!isValidView) return;
+
+                String path = generatorPrefixPath(audioInfo);
+                AudioPlayerHelper.getInstance().playAudio(path, audioInfo);
+                zoomInOutAndFade(view, convertSecondStringToMilliSeconds(audioInfo.getWordDuration()), listener);
+            }
+        }, startTime);
+    }
+
+    @NonNull
+    private String generatorPrefixPath(TimedAudioInfoModel audioInfo) {
+        String path = Config.AUDIO_WORDS_SETS_PATH;
+
+        //if file name not exist
+        if (TextUtils.isEmpty(audioInfo.getFileName())) {
+            //Generator file name
+            audioInfo.setFileName("words-" + mLetterModel.getSourceLetter().toUpperCase() + "-" + mLetterModel.getSoundId());
+        }
+
+        if (audioInfo.getFileName().contains("/")) {
+            path = Config.AUDIO_ROOT_PATH;
+        }
+        return path;
+    }
+
+    private void zoomInOutAndFade(final View view, int timingAudioDuration, @Nullable final Animation.AnimationListener listener) {
+
+        Animation zoomInAnimation = new ScaleAnimation(1, 1.15f, 1, 1.15f,
+                Animation.RELATIVE_TO_SELF, 0.5f,
+                Animation.RELATIVE_TO_SELF, 0.5f);
+        zoomInAnimation.setDuration(400);
+        zoomInAnimation.setFillAfter(true);
+
+        AlphaAnimation alphaAnimation = new AlphaAnimation(view.getAlpha(), 1f);
+        view.setAlpha(1f);
+        alphaAnimation.setDuration(400);
+        alphaAnimation.setFillAfter(true);
+
+        // 1f/1,15f is identity size
+        //Zoom out start from (view has zoom in to 1,15f) 1f to (identity size) 1f/1.15f
+        Animation zoomOutAnimation = new ScaleAnimation(1f, 1f / 1.15f, 1f, 1f / 1.15f,
+                Animation.RELATIVE_TO_SELF, 0.5f,
+                Animation.RELATIVE_TO_SELF, 0.5f);
+        int startOffset = (timingAudioDuration == 0 ? 200 : timingAudioDuration) + 300;
+        zoomOutAnimation.setDuration(500);
+        zoomOutAnimation.setStartOffset(startOffset);
+        zoomInAnimation.setFillAfter(true);
+
+        final AnimationSet animationSet = new AnimationSet(false);
+        animationSet.setInterpolator(new DecelerateInterpolator());
+        animationSet.addAnimation(zoomInAnimation);
+        animationSet.addAnimation(alphaAnimation);
+        animationSet.addAnimation(zoomOutAnimation);
+
+        if (listener != null) animationSet.setAnimationListener(listener);
+
+        view.startAnimation(animationSet);
+
+    }
+
+    @Override
+    public void onDestroy() {
+        updateViewListener = null;
+        isValidView = false;
+        AudioPlayerHelper.getInstance().stopPlayer();
+        super.onDestroy();
+        EventBus.getDefault().unregister(this);
+    }
+
+    private int convertSecondStringToMilliSeconds(String durationString) {
+        if (TextUtils.isEmpty(durationString)) return 0;
+        return (int) (Float.parseFloat(durationString) * 1000);
+    }
+
+    public interface UpdateViewListener {
+        void showButtonQuiz(boolean show);
+
+    }
+
+    public void onRepeat() {
+        if (mCurrentPlaying) return;
+        schedulePlaySoundAndAnimation();
+    }
+
+    @OnClick(R.id.frame_layout_letter)
+    void playAudioAndAnimationLetter() {
+        if (mCurrentPlaying) return;
+        animationAndPlayAudio(layoutLetter, 0, mLetterModel.getPronunciationTiming(), null);
+    }
+
+    @OnClick(R.id.layout_first_word)
+    void playAudioAndAnimationFirstWord() {
+        if (mCurrentPlaying) return;
+        TimedAudioInfoModel timedAudioInfo = mLetterModel.getPrimaryWords().get(0).getTimedAudioInfo();
+        animationAndPlayAudio(layoutFirstWord, 0, timedAudioInfo, null);
+    }
+
+    @OnClick(R.id.layout_second_word)
+    void playAudioAndAnimationSecondWord() {
+        if (mCurrentPlaying) return;
+        TimedAudioInfoModel timedAudioInfo = mLetterModel.getPrimaryWords().get(1).getTimedAudioInfo();
+        animationAndPlayAudio(layoutSecondWord, 0, timedAudioInfo, null);
+    }
+
+    @OnClick(R.id.layout_third_word)
+    void playAudioAndAnimationThirdWord() {
+        if (mCurrentPlaying) return;
+        TimedAudioInfoModel timedAudioInfo = mLetterModel.getPrimaryWords().get(2).getTimedAudioInfo();
+        animationAndPlayAudio(layoutThirdWord, 0, timedAudioInfo, null);
+    }
+
+    @Override
+    public void onStop() {
+        AudioPlayerHelper.getInstance().stopPlayer();
+        super.onStop();
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onProgressPuzzle(ProgressPuzzleEvent event) {
+        if (AppDataManager.getInstance().isPuzzleCompleted(event.getSourceLetterSoundId())) {
+            checkMark.setVisibility(View.VISIBLE);
+        }
+
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (!EventBus.getDefault().isRegistered(this)) {
+            EventBus.getDefault().register(this);
+        }
+    }
+}

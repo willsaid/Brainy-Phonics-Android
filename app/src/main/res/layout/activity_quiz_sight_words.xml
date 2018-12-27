@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/layout_activity"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/cyan_lighter"
+    tools:context=".ui.quiz_sight_words.QuizSightWordsActivity">
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/toolbar_layout"
+        android:layout_width="@dimen/dp_64"
+        android:layout_height="match_parent"
+        android:background="@color/cyan_darker">
+
+        <ImageView
+            android:id="@+id/image_view_back"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:padding="@dimen/dp_8"
+            android:src="@mipmap/back"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+
+    </android.support.constraint.ConstraintLayout>
+
+    <LinearLayout
+        android:id="@+id/layout_instruction"
+        android:layout_width="wrap_content"
+        android:layout_height="80dp"
+        android:animateLayoutChanges="true"
+        android:background="@drawable/shape_instructions"
+        android:gravity="center_vertical"
+        app:layout_constraintBottom_toTopOf="@+id/layout_content_answer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/toolbar_layout"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:id="@+id/image_view_instruction"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:layout_marginEnd="@dimen/dp_16"
+            android:layout_marginStart="@dimen/dp_20"
+            android:src="@mipmap/question" />
+
+        <TextView
+            android:id="@+id/text_view_instruction"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginEnd="@dimen/dp_20"
+            android:gravity="center_vertical"
+            android:text="Choose the word"
+            android:textSize="24sp" />
+
+    </LinearLayout>
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/layout_content_answer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/toolbar_layout"
+        app:layout_constraintTop_toBottomOf="@+id/layout_instruction">
+
+
+    </android.support.constraint.ConstraintLayout>
+
+    <ImageView
+        android:id="@+id/image_view_forward"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/dp_8"
+        android:rotation="180"
+        android:src="@mipmap/back"
+        app:layout_constraintBottom_toTopOf="@+id/image_view_piggy"
+        app:layout_constraintEnd_toEndOf="@+id/toolbar_layout"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/image_view_replay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:padding="@dimen/dp_8"
+        android:src="@mipmap/repeat"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/toolbar_layout"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/image_view_piggy"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/dp_8"
+        android:src="@mipmap/bank"
+        app:layout_constraintBottom_toTopOf="@+id/image_view_replay"
+        app:layout_constraintEnd_toEndOf="@+id/toolbar_layout"
+        app:layout_constraintStart_toStartOf="parent" />
+
+
+</android.support.constraint.ConstraintLayout>

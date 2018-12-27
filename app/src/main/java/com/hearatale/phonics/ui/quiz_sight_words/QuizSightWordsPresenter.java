@@ -1,0 +1,92 @@
+package com.hearatale.phonics.ui.quiz_sight_words;
+
+import android.support.annotation.NonNull;
+
+import com.hearatale.phonics.data.AppDataManager;
+import com.hearatale.phonics.data.DataManager;
+import com.hearatale.phonics.data.model.event.StarEvent;
+import com.hearatale.phonics.data.model.phonics.SightWordModel;
+import com.hearatale.phonics.data.model.typedef.SightWordsCategoryDef;
+import com.hearatale.phonics.data.model.typedef.SightWordsModeDef;
+import com.hearatale.phonics.data.network.api.base.async.BackgroundTask;
+import com.hearatale.phonics.service.AudioPlayerHelper;
+import com.hearatale.phonics.ui.base.activity.PresenterMVP;
+import com.hearatale.phonics.utils.Config;
+
+import org.greenrobot.eventbus.EventBus;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class QuizSightWordsPresenter extends PresenterMVP<IQuizSightWords> implements IQuizSightWordsPresenter {
+    DataManager mDataManager;
+
+    QuizSightWordsPresenter() {
+        mDataManager = AppDataManager.getInstance();
+    }
+
+    @NonNull
+    public List<SightWordModel> getAllWords(@SightWordsCategoryDef int category) {
+        return new ArrayList<>(mDataManager.getSightWords(category));
+    }
+
+    public List<SightWordModel> allAvailableOptionAllWords(@SightWordsCategoryDef int category) {
+
+        return getAllWords(category);
+    }
+
+    public List<SightWordModel> allAvailableOptionSingleWord(@SightWordsCategoryDef int category, SightWordModel specificWord) {
+        List<SightWordModel> allWords = getAllWords(category);
+
+        if (specificWord == null) return allWords;
+
+        int foundIndex = -1;
+        for (int i = 0; i < allWords.size(); i++) {
+            if (allWords.get(i).getText().equals(specificWord.getText())) {
+                foundIndex = i;
+                break;
+            }
+        }
+        if (foundIndex != -1) {
+            allWords.remove(foundIndex);
+        }
+        return allWords;
+    }
+
+    public <E> E popLastList(List<E> list) {
+        int lastIndex = list.size() - 1;
+        E found = list.get(lastIndex);
+        list.remove(lastIndex);
+        return found;
+    }
+
+    public boolean arrayHasHomophoneConflicts(List<SightWordModel> items) {
+        return mDataManager.arrayHasHomophoneConflicts(items);
+    }
+
+    public int getTotalGoldCount() {
+        return mDataManager.getTotalGoldCount();
+    }
+
+    public void saveStarCount(final SightWordModel sightWordModel, final int count) {
+        new BackgroundTask() {
+
+            boolean notifyViewUpdate;
+
+            @Override
+            public void run() {
+                int old = mDataManager.getSightWordStarCount(sightWordModel.getText());
+                notifyViewUpdate = count > old;
+                if(!notifyViewUpdate) return;
+                mDataManager.setSightWordStarCount(sightWordModel.getText(), count);
+            }
+
+            @Override
+            public void onFinish() {
+                if(!notifyViewUpdate || !EventBus.getDefault().hasSubscriberForEvent(StarEvent.class)) return;
+                EventBus.getDefault().post(new StarEvent(sightWordModel.getText(), count));
+
+            }
+        }.execute();
+    }
+}
