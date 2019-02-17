@@ -1,6 +1,5 @@
 package com.hearatale.phonics.ui.quiz_sight_words;
 
-import android.animation.LayoutTransition;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -12,11 +11,11 @@ import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewCompat;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import com.hearatale.phonics.R;
 import com.hearatale.phonics.data.Constants;
@@ -28,6 +27,7 @@ import com.hearatale.phonics.ui.bank.BankActivity;
 import com.hearatale.phonics.ui.base.activity.ActivityMVP;
 import com.hearatale.phonics.ui.base.fragment.SafeFragmentTransaction;
 import com.hearatale.phonics.ui.quiz_sight_words.answers.AnswersFragment;
+import com.hearatale.phonics.ui.sight_word.SightWordActivity;
 import com.hearatale.phonics.utils.Helper;
 import com.hearatale.phonics.utils.ImageHelper;
 
@@ -49,14 +49,19 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
     @BindView(R.id.layout_activity)
     ConstraintLayout layoutActivity;
 
-    @BindView(R.id.layout_instruction)
-    LinearLayout layoutInstruction;
+    @BindView(R.id.image_view_menu)
+    ImageView imageMenu;
 
-    @BindView(R.id.image_view_instruction)
-    ImageView imageViewInstruction;
+//    @BindView(R.id.layout_instruction)
+//    LinearLayout layoutInstruction;
 
-    @BindView(R.id.text_view_instruction)
-    TextView textViewInstruction;
+//    @BindView(R.id.image_view_instruction)
+//    ImageView imageViewInstruction;
+//
+//    @BindView(R.id.text_view_instruction)
+//    TextView textViewInstruction;
+    @BindView(R.id.image_stars)
+    ImageView imageStars;
 
     @BindView(R.id.image_view_piggy)
     ImageView imageViewPiggy;
@@ -80,6 +85,8 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
 
     private int answerWithoutMistakeCount = 0;
 
+    private String appFeature;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -87,7 +94,7 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
         ButterKnife.bind(this);
         getArgument();
         initViews();
-        updateLayoutInstructions(InstructionsContent.listen);
+//        updateLayoutInstructions(InstructionsContent.listen);
         setupForNewWord(false);
     }
 
@@ -97,6 +104,11 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
 
         mMode = intent.getIntExtra(Constants.Arguments.SIGHT_WORD_MODE, 1);
         mCategory = intent.getIntExtra(Constants.Arguments.SIGHT_WORD_CATEGORY, 0);
+        if (mCategory == SightWordsCategoryDef.PRE_K) {
+            appFeature = "PRE_K";
+        } else {
+            appFeature = "KINDERGARTEN";
+        }
         if (mMode == SightWordsModeDef.SINGLE_WORD) {
             mCurrentWord = intent.getParcelableExtra(Constants.Arguments.SPECIFIC_SIGHT_WORD);
         }
@@ -104,7 +116,7 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
 
     private void initViews() {
         //Enable transition changing
-        layoutInstruction.getLayoutTransition().enableTransitionType(LayoutTransition.CHANGING);
+//        layoutInstruction.getLayoutTransition().enableTransitionType(LayoutTransition.CHANGING);
         initToolbar();
 
         mSafeFragmentTransaction = SafeFragmentTransaction.createInstance(getLifecycle(), getSupportFragmentManager());
@@ -127,6 +139,9 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
         mCurrentWord = selectNextAnswerWord(mRemainingWords);
         if (mCurrentWord == null) return;
 
+
+        setImageStars(mCurrentWord.getStarCount());
+
         //List incorrect words
         List<SightWordModel> listIncorrectWords = selectNextIncorrectWords(mRemainingWords);
 
@@ -143,7 +158,7 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
         fragment.setAnswersCallback(new AnswersFragment.AnswersCallback() {
             @Override
             public void updateInstruction(InstructionsContent instructionsContent) {
-                updateLayoutInstructions(instructionsContent);
+//                updateLayoutInstructions(instructionsContent);
             }
 
             @Override
@@ -168,14 +183,22 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
                 @Override
                 public void chooseCorrect(int guessCount) {
                     if (guessCount > 1) return;
-
+                    answerWithoutMistakeCount = mPresenter.getAnswersWithoutMistake(mCurrentWord.getText());
                     answerWithoutMistakeCount++;
+                    mPresenter.setAnswersWithoutMistake(mCurrentWord.getText(), answerWithoutMistakeCount);
                     mPresenter.saveStarCount(mCurrentWord, answerWithoutMistakeCount);
+
+                    if (answerWithoutMistakeCount > mCurrentWord.getStarCount()) {
+                        mCurrentWord.setStarCount(answerWithoutMistakeCount);
+                        setImageStars(mCurrentWord.getStarCount());
+                    }
+
                 }
 
                 @Override
                 public void chooseIncorrect() {
                     answerWithoutMistakeCount = 0;
+                    mPresenter.setAnswersWithoutMistake(mCurrentWord.getText(), answerWithoutMistakeCount);
                 }
             });
         }
@@ -199,6 +222,33 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
                 transaction.replace(R.id.layout_content_answer, fragment).commit();
             }
         });
+
+
+    }
+
+    private void setImageStars(int starCount) {
+
+        switch (starCount) {
+            case 0:
+                imageStars.setVisibility(View.INVISIBLE);
+                break;
+            case 1:
+                imageStars.setVisibility(View.VISIBLE);
+                imageStars.setImageResource(R.mipmap.star);
+                break;
+            case 2:
+                imageStars.setImageResource(R.mipmap.star_2);
+                break;
+            case 3:
+                imageStars.setImageResource(R.mipmap.star_3);
+                break;
+            case 4:
+                imageStars.setImageResource(R.mipmap.star_4);
+                break;
+            default:
+                imageStars.setImageResource(R.mipmap.star_5);
+                break;
+        }
 
 
     }
@@ -235,20 +285,21 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
         });
     }
 
-    private void updateLayoutInstructions(InstructionsContent content) {
-        //do nothing if the content is already applied
-        if (textViewInstruction.getText().toString().equals(content.text)) {
-            return;
-        }
-
-        imageViewInstruction.setImageResource(content.imageDrawable);
-        textViewInstruction.setText(content.text);
-
-    }
+//    private void updateLayoutInstructions(InstructionsContent content) {
+//        //do nothing if the content is already applied
+//        if (textViewInstruction.getText().toString().equals(content.text)) {
+//            return;
+//        }
+//
+//        imageViewInstruction.setImageResource(content.imageDrawable);
+//        textViewInstruction.setText(content.text);
+//
+//    }
 
     @NonNull
     private ImageView createImageCoin(int positionXImageCoin, int positionYImageCoin, boolean isCoinGold, int size) {
         final ImageView imageViewCoin = new ImageView(QuizSightWordsActivity.this);
+        imageViewCoin.bringToFront();
         imageViewCoin.setImageResource(isCoinGold ? R.mipmap.gold_coin : R.mipmap.silver_coin);
         ConstraintLayout.LayoutParams layoutParams =
                 new ConstraintLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -347,6 +398,8 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
 
         intent.putExtra(Constants.Arguments.ARG_BLUR_BITMAP, bitmapCompress);
 
+        intent.putExtra("APP_FEATURE", appFeature);
+
         startActivityForResult(intent, REQUEST_CODE);
     }
 
@@ -354,7 +407,7 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (Constants.ResultCode.SETUP_NEW_WORD_CODE == resultCode && requestCode == REQUEST_CODE
-                && mPresenter.getTotalGoldCount() > 60) {
+                && mPresenter.getTotalGoldCount(appFeature) > 60) {
             setupForNewWord(true);
         }
     }
@@ -362,5 +415,17 @@ public class QuizSightWordsActivity extends ActivityMVP<QuizSightWordsPresenter,
     @OnClick(R.id.image_view_forward)
     public void forward() {
         setupForNewWord(true);
+    }
+
+    @OnClick(R.id.image_view_menu)
+    void backToAlphabetActivity() {
+        Intent intent = new Intent(QuizSightWordsActivity.this, SightWordActivity.class);
+        if (mCategory == SightWordsCategoryDef.PRE_K) {
+            intent.putExtra(Constants.Arguments.ARG_SIGHT_WORD_MODE, SightWordsCategoryDef.PRE_K);
+        } else {
+            intent.putExtra(Constants.Arguments.ARG_SIGHT_WORD_MODE, SightWordsCategoryDef.KINDERGARTEN);
+        }
+        pushIntent(intent);
+        finish();
     }
 }

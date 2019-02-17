@@ -1,53 +1,46 @@
 package com.hearatale.phonics.ui.letter.letter_content;
 
 
-import android.animation.AnimatorSet;
-import android.graphics.Typeface;
-import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
+import android.support.constraint.ConstraintSet;
 import android.support.v4.app.Fragment;
-import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.LinearLayoutCompat;
 import android.text.Spanned;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.AnimationSet;
-import android.view.animation.AnimationUtils;
 import android.view.animation.DecelerateInterpolator;
-import android.view.animation.LinearInterpolator;
-import android.view.animation.OvershootInterpolator;
-import android.view.animation.RotateAnimation;
 import android.view.animation.ScaleAnimation;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.hearatale.phonics.Application;
 import com.hearatale.phonics.R;
 import com.hearatale.phonics.data.AppDataManager;
 import com.hearatale.phonics.data.model.event.ProgressPuzzleEvent;
 import com.hearatale.phonics.data.model.phonics.letters.LetterModel;
+import com.hearatale.phonics.data.model.phonics.letters.SimpleLetterModel;
 import com.hearatale.phonics.data.model.phonics.letters.TimedAudioInfoModel;
+import com.hearatale.phonics.data.model.typedef.DifficultyDef;
 import com.hearatale.phonics.service.AudioPlayerHelper;
+import com.hearatale.phonics.ui.simple_alphabet.SimpleAlphabetPresenter;
 import com.hearatale.phonics.utils.Config;
-import com.hearatale.phonics.utils.FontsHelper;
-import com.hearatale.phonics.utils.Utils;
+import com.hearatale.phonics.utils.Helper;
 import com.hearatale.phonics.utils.glide.GlideApp;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
+
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -60,6 +53,9 @@ import butterknife.OnClick;
 public class LetterContentFragment extends Fragment {
 
     private static String ARG_LETTER_MODE = "ARG_LETTER_MODE";
+
+    @BindView(R.id.parent_layout)
+    ConstraintLayout parentLayout;
 
     @BindView(R.id.text_view_letter)
     TextView textViewLetter;
@@ -104,6 +100,11 @@ public class LetterContentFragment extends Fragment {
 
     boolean isValidView;
 
+    private static int mLetterModeDef = DifficultyDef.EASY;
+
+    SimpleAlphabetPresenter mAlphabetPresenter;
+    List<SimpleLetterModel> mListItem;
+
     public void setUpdateViewListener(UpdateViewListener updateViewListener) {
         this.updateViewListener = updateViewListener;
     }
@@ -112,7 +113,16 @@ public class LetterContentFragment extends Fragment {
         // Required empty public constructor
     }
 
-    public static LetterContentFragment newInstance(LetterModel letterModel) {
+    public TextView getTextViewLetter() {
+        return textViewLetter;
+    }
+
+    public void setTextViewLetter(TextView textViewLetter) {
+        this.textViewLetter = textViewLetter;
+    }
+
+    public static LetterContentFragment newInstance(LetterModel letterModel, int modeDef) {
+        mLetterModeDef = modeDef;
         LetterContentFragment fragment = new LetterContentFragment();
         Bundle args = new Bundle();
         args.putParcelable(ARG_LETTER_MODE, letterModel);
@@ -127,6 +137,8 @@ public class LetterContentFragment extends Fragment {
         if (getArguments() != null) {
             mLetterModel = getArguments().getParcelable(ARG_LETTER_MODE);
         }
+        mAlphabetPresenter = new SimpleAlphabetPresenter();
+        mListItem = mAlphabetPresenter.getLetterByMode(mLetterModeDef);
     }
 
     @Override
@@ -143,29 +155,50 @@ public class LetterContentFragment extends Fragment {
 
     private void initViews() {
 
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            ConstraintSet constraintSet = new ConstraintSet();
+            constraintSet.clone(parentLayout);
+            constraintSet.centerHorizontally(layoutLetter.getId(), parentLayout.getId());
+            constraintSet.centerVertically(layoutLetter.getId(), parentLayout.getId());
+            constraintSet.applyTo(parentLayout);
+        }
+
         //Text view
         String letterText = mLetterModel.getDisplayString().toLowerCase();
-        textViewLetter.setText(letterText);
 
-        Spanned firstWord = getWordDecorator(0);
-        textViewFirst.setText(firstWord);
-        Spanned secondWord = getWordDecorator(1);
-        textViewSecond.setText(secondWord);
-        Spanned thirdWord = getWordDecorator(2);
-        textViewThird.setText(thirdWord);
-        //ImageView
-        String firstPath = Config.IMAGES_WORD_BY_LETTER_PATH +  mLetterModel.getPrimaryWords().get(0).getText() + ".jpg";
-        GlideApp.with(this).load(Uri.parse(firstPath)).into(imageViewFirst);
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            if (letterText.contains("qu")) {
+                textViewLetter.setText("Q q");
+            }else {
+                textViewLetter.setText(letterText.toUpperCase() + " " + letterText);
+            }
+            String displayLetter = mLetterModel.getSourceLetter() + "-" + mLetterModel.getSoundId();
+            int starCount = AppDataManager.getInstance().getCompletedPuzzlePieces(displayLetter + "ALPHABET_LETTERS_Stars").size();
+            checkMark.setVisibility(starCount >= 5 ? View.VISIBLE : View.GONE);
+        } else {
+            textViewLetter.setText(letterText);
 
-        String secondPath = Config.IMAGES_WORD_BY_LETTER_PATH +  mLetterModel.getPrimaryWords().get(1).getText() + ".jpg";
-        GlideApp.with(this).load(Uri.parse(secondPath)).into(imageViewSecond);
 
-        String thirdPath = Config.IMAGES_WORD_BY_LETTER_PATH + mLetterModel.getPrimaryWords().get(2).getText() + ".jpg";
-        GlideApp.with(this).load(Uri.parse(thirdPath)).into(imageViewThird);
+            Spanned firstWord = getWordDecorator(0);
+            textViewFirst.setText(firstWord);
+            Spanned secondWord = getWordDecorator(1);
+            textViewSecond.setText(secondWord);
+            Spanned thirdWord = getWordDecorator(2);
+            textViewThird.setText(thirdWord);
+            //ImageView
+            String firstPath = Config.IMAGES_WORD_BY_LETTER_PATH +  mLetterModel.getPrimaryWords().get(0).getText() + ".jpg";
+            GlideApp.with(this).load(Uri.parse(firstPath)).into(imageViewFirst);
 
-        String displayLetter = mLetterModel.getSourceLetter() + "-" + mLetterModel.getSoundId();
-        int size = AppDataManager.getInstance().getCompletedPuzzlePieces(displayLetter).size();
-        checkMark.setVisibility(size == Config.PUZZLE_COLUMNS * Config.PUZZLE_ROWS ? View.VISIBLE : View.GONE);
+            String secondPath = Config.IMAGES_WORD_BY_LETTER_PATH +  mLetterModel.getPrimaryWords().get(1).getText() + ".jpg";
+            GlideApp.with(this).load(Uri.parse(secondPath)).into(imageViewSecond);
+
+            String thirdPath = Config.IMAGES_WORD_BY_LETTER_PATH + mLetterModel.getPrimaryWords().get(2).getText() + ".jpg";
+            GlideApp.with(this).load(Uri.parse(thirdPath)).into(imageViewThird);
+
+            String displayLetter = mLetterModel.getSourceLetter() + "-" + mLetterModel.getSoundId();
+            int size = AppDataManager.getInstance().getCompletedPuzzlePieces(displayLetter).size();
+            checkMark.setVisibility(size == Config.PUZZLE_COLUMNS * Config.PUZZLE_ROWS ? View.VISIBLE : View.GONE);
+        }
     }
 
     public void visibleView() {
@@ -186,7 +219,7 @@ public class LetterContentFragment extends Fragment {
         return AppDataManager.getInstance()
                 .decorateWord(text,
                         mLetterModel.getDisplayString().toLowerCase(),
-                        getResources().getColor(R.color.colorAccent));
+                        getResources().getColor(R.color.colorAccent), mLetterModel.getSoundId());
     }
 
     private void schedulePlaySoundAndAnimation() {
@@ -195,11 +228,20 @@ public class LetterContentFragment extends Fragment {
         int startTime = 1000;
         int timeBetween = 850;
 
-        if (updateViewListener != null) updateViewListener.showButtonQuiz(false);
+        if (mLetterModeDef == DifficultyDef.STANDARD) {
+            if (updateViewListener != null) updateViewListener.showButtonQuiz(false);
+        } else {
+            if (updateViewListener != null) updateViewListener.showButtonQuiz(true);
+        }
 
         animationAndPlayAudio(layoutLetter, startTime, mLetterModel.getPronunciationTiming(), null);
         final int durationPronunciation = convertSecondStringToMilliSeconds(mLetterModel.getPronunciationTiming().getWordDuration());
         startTime += (durationPronunciation == 0 ? 500 : durationPronunciation) + timeBetween;
+
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            mCurrentPlaying = false;
+            return;
+        }
 
         TimedAudioInfoModel timedAudioInfo = mLetterModel.getPrimaryWords().get(0).getTimedAudioInfo();
         final int durationFirstWord = convertSecondStringToMilliSeconds(timedAudioInfo.getWordDuration());
@@ -239,12 +281,46 @@ public class LetterContentFragment extends Fragment {
             @Override
             public void run() {
                 if (!isValidView) return;
+                if (mLetterModeDef == DifficultyDef.STANDARD) {
+                    String path = generatorPrefixPath(audioInfo);
+                    AudioPlayerHelper.getInstance().playAudio(path, audioInfo);
+                    zoomInOutAndFade(view, convertSecondStringToMilliSeconds(audioInfo.getWordDuration()), listener);
+                } else {
+                    SimpleLetterModel letterSimple = null;
+                    for(SimpleLetterModel letterM: mListItem) {
+                        if (letterM.getLetter().equals(mLetterModel.getSourceLetter())) {
+                            letterSimple = letterM;
+                            break;
+                        }
+                    }
+                    TimedAudioInfoModel audioInfo = letterSimple.getAudioInfo();
 
-                String path = generatorPrefixPath(audioInfo);
-                AudioPlayerHelper.getInstance().playAudio(path, audioInfo);
-                zoomInOutAndFade(view, convertSecondStringToMilliSeconds(audioInfo.getWordDuration()), listener);
+                    //Audio info is null then get sound name form assets
+                    String prefixPath = Config.AUDIO_WORDS_SETS_PATH;
+                    if (audioInfo.getFileName().contains("extra")) {
+                        prefixPath = Config.AUDIO_SOUND_EXTRA_PATH;
+                    }
+                    if (audioInfo == null || TextUtils.isEmpty(audioInfo.getFileName())) {
+                        initSourceLetterTiming(letterSimple);
+                        prefixPath = Config.AUDIO_SOUND_EXTRA_PATH;
+                    }
+                    audioInfo = letterSimple.getAudioInfo();
+
+                    AudioPlayerHelper.getInstance().playAudio(prefixPath, audioInfo);
+                }
             }
         }, startTime);
+    }
+
+    private void initSourceLetterTiming(SimpleLetterModel letter) {
+        //if the letter doesn't exist in the sound files, it should be in "assets > Audio > Sounds > Extra Letters"
+        TimedAudioInfoModel audioInfo = new TimedAudioInfoModel();
+        audioInfo.setFileName("extra-letter-" + letter.getLetter().toUpperCase());
+        String pathExtraLetterAudioFile = Config.AUDIO_BY_LETTER_PATH + audioInfo.getFileName() + ".mp3";
+        float duration = Helper.getDurationAudioFromAssets(this.getActivity(), pathExtraLetterAudioFile);
+        audioInfo.setWordStart("0.0");
+        audioInfo.setWordDuration(duration + "");
+        letter.setAudioInfo(audioInfo);
     }
 
     @NonNull
@@ -319,7 +395,8 @@ public class LetterContentFragment extends Fragment {
 
     public void onRepeat() {
         if (mCurrentPlaying) return;
-        schedulePlaySoundAndAnimation();
+//        schedulePlaySoundAndAnimation();
+        animationAndPlayAudio(layoutLetter, 0, mLetterModel.getPronunciationTiming(), null);
     }
 
     @OnClick(R.id.frame_layout_letter)

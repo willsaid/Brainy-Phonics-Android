@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -14,6 +15,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -35,11 +37,13 @@ import com.hearatale.phonics.data.Constants;
 import com.hearatale.phonics.data.model.phonics.QuizPuzzleLetterModel;
 import com.hearatale.phonics.data.model.phonics.letters.LetterModel;
 import com.hearatale.phonics.data.model.phonics.letters.PuzzlePieceModel;
+import com.hearatale.phonics.data.model.phonics.letters.SimpleLetterModel;
 import com.hearatale.phonics.data.model.phonics.letters.TimedAudioInfoModel;
 import com.hearatale.phonics.data.model.phonics.letters.WordModel;
 import com.hearatale.phonics.data.model.typedef.AnimationDef;
 import com.hearatale.phonics.data.model.typedef.DifficultyDef;
 import com.hearatale.phonics.service.AudioPlayerHelper;
+import com.hearatale.phonics.ui.bank.BankActivity;
 import com.hearatale.phonics.ui.base.activity.ActivityMVP;
 import com.hearatale.phonics.ui.base.fragment.SafeFragmentTransaction;
 import com.hearatale.phonics.ui.custom_view.PHAnimationListener;
@@ -47,15 +51,19 @@ import com.hearatale.phonics.ui.custom_view.PHListener;
 import com.hearatale.phonics.ui.custom_view.PHPuzzleListener;
 import com.hearatale.phonics.ui.quiz_puzzle.content.PuzzleLetterFragment;
 import com.hearatale.phonics.ui.quiz_puzzle.content.WordFragment;
+import com.hearatale.phonics.ui.simple_alphabet.SimpleAlphabetActivity;
+import com.hearatale.phonics.ui.simple_alphabet.SimpleAlphabetPresenter;
 import com.hearatale.phonics.utils.Config;
 import com.hearatale.phonics.utils.DebugLog;
+import com.hearatale.phonics.utils.Helper;
+import com.hearatale.phonics.utils.ImageHelper;
 import com.hearatale.phonics.utils.glide.GlideApp;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -78,6 +86,12 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
     // toolbar
     @BindView(R.id.toolbar_layout)
     ConstraintLayout layoutToolbar;
+
+    @BindView(R.id.image_view_check)
+    ImageView imageCheck;
+
+    @BindView(R.id.image_view_piggy)
+    ImageView imageViewPiggy;
 
     @BindView(R.id.image_view_home)
     ImageView imageHome;
@@ -109,7 +123,7 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
 
     boolean mPuzzleRandom = false;
 
-    List<WordModel> mSelectedWords = new ArrayList<>();
+    CopyOnWriteArrayList<WordModel> mSelectedWords = new CopyOnWriteArrayList<>();
     PuzzleLetterFragment mPuzzleLetterFragment;
     WordFragment mWordFragment;
 
@@ -127,11 +141,16 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
     private String mDisplayLetter = "";
     private int mCurrentStarConsecutive = 0;
 
+    SimpleAlphabetPresenter mAlphabetPresenter;
+    List<SimpleLetterModel> mListItem;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quiz_puzzle);
         ButterKnife.bind(this);
+
+//        ImageView imageViewStars = helper.getView(R.id.image_view_question);
 
         // get argument from parent activity
 
@@ -144,6 +163,9 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
 
     private void getArgs() {
         // mode EZ, STANDARD
+
+        mAlphabetPresenter = new SimpleAlphabetPresenter();
+        mListItem = mAlphabetPresenter.getLetterByMode(mLetterModeDef);
 
         if (getIntent() != null && getIntent().getExtras() != null) {
             mPuzzleRandom = getIntent().getExtras().getBoolean(Constants.Arguments.ARG_PUZZLE_RANDOM, false);
@@ -168,6 +190,11 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
 
         mSelectedWords = mPresenter.getSelectedWords(mCurrentLetter, mPuzzleRandom);
 
+        if (mLetterModeDef == DifficultyDef.EASY && mPuzzleRandom == false) {
+            mSelectedWords.add(new WordModel());
+        }
+
+
     }
 
     private void initDebug() {
@@ -177,6 +204,12 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
 
     private void initViews() {
 
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            frameLayoutLetter.setVisibility(View.GONE);
+            playLetterAudio();
+        }
+
+
         initToolbar();
 
         mWordSize = getWordSize();
@@ -185,14 +218,16 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
         getLifecycle().addObserver(safeFragmentTransaction);
 
         // puzzle
-        safeFragmentTransaction.registerFragmentTransition(new SafeFragmentTransaction.TransitionHandler() {
-            @Override
-            public void onTransitionAvailable(FragmentManager managerBy) {
-                managerBy.beginTransaction()
-                        .add(R.id.frame_layout_puzzle_letter, getPuzzleLetterFragment(mCurrentLetter, mPuzzleRandom, mPuzzleColor))
-                        .commit();
-            }
-        });
+//        if (mLetterModeDef == DifficultyDef.STANDARD) {
+            safeFragmentTransaction.registerFragmentTransition(new SafeFragmentTransaction.TransitionHandler() {
+                @Override
+                public void onTransitionAvailable(FragmentManager managerBy) {
+                    managerBy.beginTransaction()
+                            .add(R.id.frame_layout_puzzle_letter, getPuzzleLetterFragment(mCurrentLetter, mPuzzleRandom, mPuzzleColor))
+                            .commit();
+                }
+            });
+//        }
 
         // word
         safeFragmentTransaction.registerFragmentTransition(new SafeFragmentTransaction.TransitionHandler() {
@@ -242,10 +277,12 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
 
     private void initToolbar() {
         imageHome.setImageResource(R.mipmap.back);
-        imageMenu.setVisibility(View.GONE);
+        imageCheck.setVisibility(View.GONE);
+        imageViewPiggy.setVisibility(View.VISIBLE);
+        imageMenu.setVisibility(View.VISIBLE);
         imageQuestion.setVisibility(View.GONE);
         imagePuzzle.setImageResource(R.mipmap.repeat);
-        imageForward.setVisibility(View.VISIBLE);
+        imageForward.setVisibility(View.GONE);
 
         @IdRes int toolbarColor;
         @IdRes int puzzleLetterColor;
@@ -261,7 +298,7 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
         }
 
         layoutToolbar.setBackgroundColor(toolbarColor);
-        frameLayoutLetter.setBackgroundColor(puzzleLetterColor);
+//        frameLayoutLetter.setBackgroundColor(puzzleLetterColor);
 
     }
 
@@ -324,7 +361,7 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
     @Override
     public WordFragment getWordFragment(LetterModel letter, List<WordModel> selectedWords, final boolean puzzleRandom, int[] size) {
         mWordFragment = null;
-        mWordFragment = WordFragment.newInstance(letter, selectedWords, puzzleRandom, size);
+        mWordFragment = WordFragment.newInstance(letter, selectedWords, puzzleRandom, size, mLetterModeDef);
         mWordFragment.setSelectedWordListener(new WordFragment.SelectedWordListener() {
             @Override
             public void onCorrectAnswer(int totalPuzzleCompleted, final int coordinateX, final int coordinateY) {
@@ -333,11 +370,25 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
                     String displayLetter = mCurrentLetter.getSourceLetter() + "-" + mCurrentLetter.getSoundId();
                     List<PuzzlePieceModel> puzzlePieces = mPresenter.getCompletedPuzzlePieces(displayLetter);
 
-                    if (totalPuzzleCompleted == Config.MAX_PUZZLE_COMPLETED) {
-                        mCurrentStarConsecutive++;
+                    if (mLetterModeDef == DifficultyDef.EASY) {
+                        mCurrentStarConsecutive = mPresenter.getAnswersWithoutMistake(mDisplayLetter + "ALPHABET_LETTERS_CurrentStarConsecutive");
                     } else {
-                        mCurrentStarConsecutive = 0;
+                        mCurrentStarConsecutive = mPresenter.getAnswersWithoutMistake(mDisplayLetter + "PHONICS_CurrentStarConsecutive");
                     }
+
+//                    if (totalPuzzleCompleted == Config.MAX_PUZZLE_COMPLETED) {
+                    mCurrentStarConsecutive++;
+//                    } else {
+//                        mCurrentStarConsecutive = 0;
+//                    }
+
+
+                    if (mLetterModeDef == DifficultyDef.EASY) {
+                        mPresenter.setAnswersWithoutMistake(mDisplayLetter + "ALPHABET_LETTERS_CurrentStarConsecutive", mCurrentStarConsecutive);
+                    } else {
+                        mPresenter.setAnswersWithoutMistake(mDisplayLetter + "PHONICS_CurrentStarConsecutive", mCurrentStarConsecutive);
+                    }
+
 
                     if (mCurrentStarConsecutive >= Config.MIN_STAR_CONSECUTIVE) {
                         saveStarConsecutive(mCurrentStarConsecutive);
@@ -347,6 +398,17 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
                         setupView();
                         return;
                     }
+
+                    if (mLetterModeDef == DifficultyDef.EASY) {
+                        setupView();
+                        return;
+                    }
+
+//                    replaceWordFragment();
+
+//                    if (mPuzzleLetterFragment == null) {
+//                        return;
+//                    }
 
 
                     mTotalPuzzleCompleted.set(totalPuzzleCompleted);
@@ -429,6 +491,12 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
             @Override
             public void onInCorrectAnswer() {
                 mCurrentStarConsecutive = 0;
+
+                if (mLetterModeDef == DifficultyDef.EASY) {
+                    mPresenter.setAnswersWithoutMistake(mDisplayLetter + "ALPHABET_LETTERS_CurrentStarConsecutive", mCurrentStarConsecutive);
+                } else {
+                    mPresenter.setAnswersWithoutMistake(mDisplayLetter + "PHONICS_CurrentStarConsecutive", mCurrentStarConsecutive);
+                }
             }
 
             @Override
@@ -442,6 +510,15 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
             @Override
             public void onLetterClick() {
                 isViewWordClicked = true;
+            }
+
+            @Override
+            public void onPlayAudio(String path) {
+                if (mLetterModeDef == DifficultyDef.STANDARD) {
+                    AudioPlayerHelper.getInstance().playAudio(path);
+                } else {
+                    playLetterAudio();
+                }
             }
 
             @Override
@@ -465,6 +542,16 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
             public void onShake(View v) {
                 shake(v, null);
             }
+
+            @Override
+            public void animateCoinFlyToPiggyBank(int positionXCorrect, int positionYCorrect, boolean isCoinGold) {
+                animateFlyCoin(positionXCorrect, positionYCorrect, isCoinGold);
+            }
+
+            @Override
+            public void goToBank() {
+                bank();
+            }
         });
         mWordFragment.setLifeCycleListener(new WordFragment.SelectedWordLifeCycleListener() {
             @Override
@@ -486,9 +573,48 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
         return mWordFragment;
     }
 
+    private void playLetterAudio() {
+        SimpleLetterModel letterSimple = null;
+        for(SimpleLetterModel letterM: mListItem) {
+            if (letterM.getLetter().equals(mCurrentLetter.getSourceLetter())) {
+                letterSimple = letterM;
+                break;
+            }
+        }
+        TimedAudioInfoModel audioInfo = letterSimple.getAudioInfo();
+
+        //Audio info is null then get sound name form assets
+        String prefixPath = Config.AUDIO_WORDS_SETS_PATH;
+        if (audioInfo.getFileName().contains("extra")) {
+            prefixPath = Config.AUDIO_SOUND_EXTRA_PATH;
+        }
+        if (audioInfo == null || TextUtils.isEmpty(audioInfo.getFileName())) {
+            initSourceLetterTiming(letterSimple);
+            prefixPath = Config.AUDIO_SOUND_EXTRA_PATH;
+        }
+        audioInfo = letterSimple.getAudioInfo();
+
+        AudioPlayerHelper.getInstance().playAudio(prefixPath, audioInfo);
+    }
+
+    private void initSourceLetterTiming(SimpleLetterModel letter) {
+        //if the letter doesn't exist in the sound files, it should be in "assets > Audio > Sounds > Extra Letters"
+        TimedAudioInfoModel audioInfo = new TimedAudioInfoModel();
+        audioInfo.setFileName("extra-letter-" + letter.getLetter().toUpperCase());
+        String pathExtraLetterAudioFile = Config.AUDIO_BY_LETTER_PATH + audioInfo.getFileName() + ".mp3";
+        float duration = Helper.getDurationAudioFromAssets(this, pathExtraLetterAudioFile);
+        audioInfo.setWordStart("0.0");
+        audioInfo.setWordDuration(duration + "");
+        letter.setAudioInfo(audioInfo);
+    }
+
+
     private void replaceWordFragment() {
 
         mSelectedWords = mPresenter.getSelectedWords(mCurrentLetter, mPuzzleRandom);
+        if (mLetterModeDef == DifficultyDef.EASY && mPuzzleRandom == false) {
+            mSelectedWords.add(new WordModel());
+        }
         safeFragmentTransaction.registerFragmentTransition(new SafeFragmentTransaction.TransitionHandler() {
             @Override
             public void onTransitionAvailable(final FragmentManager managerBy) {
@@ -514,6 +640,60 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
 
     }
 
+    private void animateFlyCoin(int positionXCorrect, int positionYCorrect, boolean isCoinGold) {
+        int padding8dp = getResources().getDimensionPixelSize(R.dimen.dp_8);
+        int coinSize = imageViewPiggy.getWidth() - (2 * padding8dp);
+
+//        positionXCorrect = (Helper.getRelativeLeft(layoutActivity) + layoutActivity.getWidth()) / 2;
+//        positionYCorrect = (Helper.getRelativeTop(layoutActivity) + layoutActivity.getHeight()) / 2;
+//        positionXCorrect+=500;
+
+        int positionXImageCoin = positionXCorrect - coinSize;
+        int positionYImageCoin = positionYCorrect - coinSize;
+        int positionXPiggy = Helper.getRelativeLeft(imageViewPiggy) + padding8dp;
+        int positionYPiggy = Helper.getRelativeTop(imageViewPiggy) + padding8dp;
+        ViewCompat.setTranslationZ(imageViewPiggy, 1);
+        final ImageView imageViewCoin = createImageCoin(positionXImageCoin, positionYImageCoin, isCoinGold, coinSize);
+        layoutActivity.addView(imageViewCoin, layoutActivity.getChildCount() - 2);
+        imageViewCoin.animate().alpha(1f).setDuration(125);
+        imageViewCoin.animate()
+                .setDuration(600)
+                .setInterpolator(new DecelerateInterpolator())
+                .scaleX(0.5f).scaleY(0.5f)
+                .translationX(positionXPiggy - (positionXCorrect - coinSize / 2))
+                .translationY(positionYPiggy - (positionYCorrect - coinSize / 2))
+                .withEndAction(new Runnable() {
+                    @Override
+                    public void run() {
+                        layoutActivity.removeView(imageViewCoin);
+                    }
+                });
+        imageViewPiggy.animate().setDuration(300).setStartDelay(350).scaleX(1.3f).scaleY(1.3f).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                imageViewPiggy.animate().setDuration(300).scaleX(1f).scaleY(1f);
+            }
+        });
+    }
+
+    @NonNull
+    private ImageView createImageCoin(int positionXImageCoin, int positionYImageCoin, boolean isCoinGold, int size) {
+        final ImageView imageViewCoin = new ImageView(QuizPuzzleActivity.this);
+        imageViewCoin.setImageResource(isCoinGold ? R.mipmap.gold_coin : R.mipmap.silver_coin);
+        ConstraintLayout.LayoutParams layoutParams =
+                new ConstraintLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        layoutParams.height = size * 2; //initial double size
+        layoutParams.width = size * 2;
+        layoutParams.leftMargin = positionXImageCoin;
+        layoutParams.topMargin = positionYImageCoin;
+        layoutParams.topToTop = layoutActivity.getId();
+        layoutParams.leftToLeft = layoutActivity.getId();
+        imageViewCoin.setLayoutParams(layoutParams);
+        imageViewCoin.setAlpha(0f);
+        return imageViewCoin;
+    }
+
+
     @OnClick(R.id.image_view_home)
     void back() {
         onBackPressed();
@@ -527,6 +707,10 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
 
     @OnClick(R.id.image_view_puzzle)
     void repeat() {
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            playLetterAudio();
+            return;
+        }
         if (PLAYING) {
             return;
         }
@@ -538,6 +722,41 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
         setupView(true);
     }
 
+    @OnClick(R.id.image_view_piggy)
+    void bank() {
+        Intent intent = new Intent(QuizPuzzleActivity.this, BankActivity.class);
+
+        // screenshot
+        Bitmap bitmap = ImageHelper.getBitmapFromView(layoutActivity, Bitmap.Config.RGB_565);
+        // compress
+        Bitmap bitmapCompress = ImageHelper.compressBySampleSize(bitmap, 12);
+
+        intent.putExtra(Constants.Arguments.ARG_BLUR_BITMAP, bitmapCompress);
+
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            intent.putExtra("APP_FEATURE", "ALPHABET_LETTERS");
+        } else {
+            intent.putExtra("APP_FEATURE", "PHONICS");
+        }
+
+        pushIntent(intent);
+
+    }
+
+    @OnClick(R.id.image_view_menu)
+    void backToAlphabetActivity() {
+        AudioPlayerHelper.getInstance().stopPlayer();
+        Intent intent = new Intent(QuizPuzzleActivity.this, SimpleAlphabetActivity.class);
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            intent.putExtra(Constants.Arguments.ARG_LETTER_MODE, DifficultyDef.EASY);
+        } else {
+            intent.putExtra(Constants.Arguments.ARG_LETTER_MODE, DifficultyDef.STANDARD);
+        }
+        pushIntent(intent);
+        finish();
+    }
+
+
     private void animationAndPlayAudio(View view, @AnimationDef int animationDef, final TimedAudioInfoModel audioInfo) {
         animationAndPlayAudio(view, animationDef, audioInfo, null);
     }
@@ -546,20 +765,23 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
                                        @AnimationDef int animationDef,
                                        final TimedAudioInfoModel audioInfo,
                                        final PHListener.AnimationListener listener) {
-        String path = generatorPrefixPath(audioInfo);
-        AudioPlayerHelper.getInstance().playAudio(path, audioInfo);
-        switch (animationDef) {
+        if (mLetterModeDef == DifficultyDef.STANDARD) {
+            String path = generatorPrefixPath(audioInfo);
+            AudioPlayerHelper.getInstance().playAudio(path, audioInfo);
 
-            case AnimationDef.SHAKE_ZOOM:
-                shake(view, listener);
-                zoomInOutAndFade(view, convertSecondStringToMilliSeconds(audioInfo.getWordDuration()), listener);
-                break;
-            case AnimationDef.SHAKE:
-                shake(view, listener);
-                break;
-            case AnimationDef.ZOOM:
-                zoomInOutAndFade(view, convertSecondStringToMilliSeconds(audioInfo.getWordDuration()), listener);
-                break;
+            switch (animationDef) {
+
+                case AnimationDef.SHAKE_ZOOM:
+                    shake(view, listener);
+                    zoomInOutAndFade(view, convertSecondStringToMilliSeconds(audioInfo.getWordDuration()), listener);
+                    break;
+                case AnimationDef.SHAKE:
+                    shake(view, listener);
+                    break;
+                case AnimationDef.ZOOM:
+                    zoomInOutAndFade(view, convertSecondStringToMilliSeconds(audioInfo.getWordDuration()), listener);
+                    break;
+            }
         }
     }
 
@@ -769,9 +991,14 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
             resetRepeatAudio();
             if (mPuzzleRandom) {
                 mCurrentLetter = mPresenter.randomLetter(mLetterModeDef);
-                replacePuzzleLetterFragment();
+                if (mLetterModeDef == DifficultyDef.STANDARD) {
+                    replacePuzzleLetterFragment();
+                }
             }
             replaceWordFragment();
+            if (mLetterModeDef == DifficultyDef.EASY) {
+                playLetterAudio();
+            }
         }
     };
 
@@ -796,8 +1023,11 @@ public class QuizPuzzleActivity extends ActivityMVP<QuizPuzzlePresenter, IQuizPu
         if (mPuzzleRandom) {
             return;
         }
-
-        mPresenter.saveStarConsecutive(mDisplayLetter, starConsecutive);
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            mPresenter.saveStarConsecutive(mDisplayLetter + "ALPHABET_LETTERS_Stars", starConsecutive);
+        } else {
+            mPresenter.saveStarConsecutive(mDisplayLetter + "PHONICS_Stars", starConsecutive);
+        }
 
     }
 

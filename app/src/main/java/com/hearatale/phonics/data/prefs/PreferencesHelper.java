@@ -16,6 +16,10 @@ public interface PreferencesHelper {
 
     void clearPref();
 
+    public void setAnswersWithoutMistake(String sightWord, int answersWithoutMistake);
+
+    public int getAnswersWithoutMistake(String sightWord);
+
     Map<String, List<LetterModel>> getLetters();
 
     void setPiecesCompletedByLetter(String letter, List<PieceModel> piecesCompleted);
@@ -34,13 +38,13 @@ public interface PreferencesHelper {
 
     List<SightWordModel> getSightWords(@SightWordsCategoryDef int category);
 
-    void setTotalGoldCount(int count);
+    void setTotalGoldCount(String appFeature, int count);
 
-    int getTotalGoldCount();
+    int getTotalGoldCount(String appFeature);
 
-    void setTotalSilverCount(int count);
+    void setTotalSilverCount(String appFeature, int count);
 
-    int getTotalSilverCount();
+    int getTotalSilverCount(String appFeature);
 
     void setSightWordStarCount(String text,int count);
 

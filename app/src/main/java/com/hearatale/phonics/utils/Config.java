@@ -46,6 +46,6 @@ public final class Config {
     public static final List<List<String>> HOMOPHONE_GROUPS = new ArrayList<>(Collections.singleton(Arrays.asList("to", "too", "two")));
 
     public static final int MAX_PUZZLE_COMPLETED = 2;
-    public static final int MIN_STAR_CONSECUTIVE = 2;
+    public static final int MIN_STAR_CONSECUTIVE = 1;
     public static final int MAX_STAR_CONSECUTIVE = 5;
 }

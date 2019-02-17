@@ -7,7 +7,6 @@ import com.hearatale.phonics.data.DataManager;
 import com.hearatale.phonics.data.model.phonics.SightWordModel;
 import com.hearatale.phonics.data.model.typedef.SightWordsCategoryDef;
 import com.hearatale.phonics.service.AudioPlayerHelper;
-import com.hearatale.phonics.ui.base.activity.PresenterMVP;
 import com.hearatale.phonics.ui.base.fragment.FragmentPresenterMVP;
 import com.hearatale.phonics.utils.Config;
 
@@ -19,7 +18,7 @@ public class AnswersPresenter extends FragmentPresenterMVP<IAnswers> implements 
 
     DataManager mDataManager;
 
-    AnswersPresenter() {
+    public AnswersPresenter() {
         mDataManager = AppDataManager.getInstance();
     }
 
@@ -44,43 +43,43 @@ public class AnswersPresenter extends FragmentPresenterMVP<IAnswers> implements 
         AudioPlayerHelper.getInstance().playAudio(path);
     }
 
-    public void increaseTotalGoldCoins() {
-        int totalGoldCount = getTotalGoldCount() + 1;
-        int totalSilverCoins = getTotalSilverCount();
+    public void increaseTotalGoldCoins(String appFeature) {
+        int totalGoldCount = getTotalGoldCount(appFeature) + 1;
+        int totalSilverCoins = getTotalSilverCount(appFeature);
         int totalCoins = totalGoldCount + (totalSilverCoins / 2);
-        if (checkResetCoin(totalSilverCoins, totalCoins)) return;
-        mDataManager.setTotalGoldCount(totalGoldCount);
+        if (checkResetCoin(appFeature, totalSilverCoins, totalCoins)) return;
+        mDataManager.setTotalGoldCount(appFeature, totalGoldCount);
     }
 
-    public void increaseTotalSilverCoins() {
-        int totalSilverCoins = mDataManager.getTotalSilverCount() + 1;
-        int totalCoins = (totalSilverCoins / 2) + getTotalGoldCount();
-        if (checkResetCoin(totalSilverCoins, totalCoins)) return;
-        mDataManager.setTotalSilverCount(totalSilverCoins);
+    public void increaseTotalSilverCoins(String appFeature) {
+        int totalSilverCoins = mDataManager.getTotalSilverCount(appFeature) + 1;
+        int totalCoins = (totalSilverCoins / 2) + getTotalGoldCount(appFeature);
+        if (checkResetCoin(appFeature, totalSilverCoins, totalCoins)) return;
+        mDataManager.setTotalSilverCount(appFeature, totalSilverCoins);
     }
 
-    private boolean checkResetCoin(int totalSilverCount, int totalCoins) {
+    private boolean checkResetCoin(String appFeature, int totalSilverCount, int totalCoins) {
         int remainingSliver = totalSilverCount % 2;
         int trucks = totalCoins / COINS_TRUCK;
         if (trucks >= 10 && (totalCoins % COINS_TRUCK > 0 || remainingSliver > 0)) {
             //Reset coin
-            resetCoins();
+            resetCoins(appFeature);
             return true;
         }
         return false;
     }
 
 
-    public int getTotalGoldCount() {
-        return mDataManager.getTotalGoldCount();
+    public int getTotalGoldCount(String appFeature) {
+        return mDataManager.getTotalGoldCount(appFeature);
     }
 
-    public int getTotalSilverCount() {
-        return mDataManager.getTotalSilverCount();
+    public int getTotalSilverCount(String appFeature) {
+        return mDataManager.getTotalSilverCount(appFeature);
     }
 
-    public void resetCoins() {
-        mDataManager.setTotalGoldCount(0);
-        mDataManager.setTotalSilverCount(0);
+    public void resetCoins(String appFeature) {
+        mDataManager.setTotalGoldCount(appFeature, 0);
+        mDataManager.setTotalSilverCount(appFeature, 0);
     }
 }

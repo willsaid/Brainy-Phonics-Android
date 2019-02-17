@@ -3,7 +3,6 @@ package com.hearatale.phonics.ui.quiz_sight_words.answers;
 
 import android.animation.ObjectAnimator;
 import android.app.Fragment;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
@@ -15,13 +14,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.hearatale.phonics.R;
-import com.hearatale.phonics.data.AppDataManager;
-import com.hearatale.phonics.data.Constants;
 import com.hearatale.phonics.data.model.phonics.InstructionsContent;
 import com.hearatale.phonics.data.model.phonics.SightWordModel;
 import com.hearatale.phonics.data.model.typedef.SightWordsCategoryDef;
 import com.hearatale.phonics.service.AudioPlayerHelper;
-import com.hearatale.phonics.ui.bank.BankActivity;
 import com.hearatale.phonics.ui.base.fragment.FragmentMVP;
 import com.hearatale.phonics.utils.DebugLog;
 import com.hearatale.phonics.utils.Helper;
@@ -53,6 +49,8 @@ public class AnswersFragment extends FragmentMVP<AnswersPresenter, IAnswers> imp
 
     @SightWordsCategoryDef
     int mCategory = SightWordsCategoryDef.PRE_K; //Default category
+
+    private String appFeature;
 
     int mGuessCount = 0;
     Handler handlerSchedule = new Handler();
@@ -96,6 +94,11 @@ public class AnswersFragment extends FragmentMVP<AnswersPresenter, IAnswers> imp
             mCurrentWord = getArguments().getParcelable(ARG_CURRENT_WORD);
             mListAnswers = getArguments().getParcelableArrayList(ARG_LIST_ANSWER);
             mCategory = getArguments().getInt(ARG_CATEGORY);
+            if (mCategory == SightWordsCategoryDef.PRE_K) {
+                appFeature = "PRE_K";
+            } else {
+                appFeature = "KINDERGARTEN";
+            }
         }
     }
 
@@ -133,21 +136,21 @@ public class AnswersFragment extends FragmentMVP<AnswersPresenter, IAnswers> imp
             @Override
             public void run() {
                 mCurrentlyAnimating = false;
-                updateInstructions(InstructionsContent.listen);
+//                updateInstructions(InstructionsContent.listen);
                 animateForCurrentWord();
             }
         }, 450);
 
     }
 
-    private void updateInstructions(InstructionsContent instructionsContent) {
-        if (answersCallback != null) {
-            answersCallback.updateInstruction(instructionsContent);
-        }
-    }
+//    private void updateInstructions(InstructionsContent instructionsContent) {
+//        if (answersCallback != null) {
+//            answersCallback.updateInstruction(instructionsContent);
+//        }
+//    }
 
     public void animateForCurrentWord() {
-        updateInstructions(InstructionsContent.listen);
+//        updateInstructions(InstructionsContent.listen);
 
         //Schedule after 400ms play audio current word
         handlerSchedule.postDelayed(new Runnable() {
@@ -158,13 +161,13 @@ public class AnswersFragment extends FragmentMVP<AnswersPresenter, IAnswers> imp
         }, 400);
 
         //Schedule after 1650ms update instruction to choose word
-        handlerForInstruction.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                updateInstructions(InstructionsContent.chooseWord);
-//                mCurrentlyAnimating = false;
-            }
-        }, 1650);
+//        handlerForInstruction.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                updateInstructions(InstructionsContent.chooseWord);
+////                mCurrentlyAnimating = false;
+//            }
+//        }, 1650);
 
     }
 
@@ -210,7 +213,7 @@ public class AnswersFragment extends FragmentMVP<AnswersPresenter, IAnswers> imp
         AudioPlayerHelper.getInstance().playCorrect(null);
 
         //Update instruction (animation) correct
-        updateInstructions(InstructionsContent.correct);
+//        updateInstructions(InstructionsContent.correct);
 
         //Animate hide incorrect answer (Alpha to 0) with 0.2s delay
         for (TextView answer : answerTextViews) {
@@ -236,10 +239,10 @@ public class AnswersFragment extends FragmentMVP<AnswersPresenter, IAnswers> imp
         // Save coins
         switch (mGuessCount) {
             case 1:
-                mPresenter.increaseTotalGoldCoins();
+                mPresenter.increaseTotalGoldCoins(appFeature);
                 break;
             case 2:
-                mPresenter.increaseTotalSilverCoins();
+                mPresenter.increaseTotalSilverCoins(appFeature);
                 break;
         }
 
@@ -271,8 +274,8 @@ public class AnswersFragment extends FragmentMVP<AnswersPresenter, IAnswers> imp
             public void run() {
 //                mCurrentlyAnimating = false;
 
-                int goldCount = mPresenter.getTotalGoldCount();
-                int silverCount = mPresenter.getTotalSilverCount();
+                int goldCount = mPresenter.getTotalGoldCount(appFeature);
+                int silverCount = mPresenter.getTotalSilverCount(appFeature);
                 int totalGold = goldCount + silverCount / 2;
 
                 if (totalGold > 0 && totalGold % 125 == 0) {
@@ -287,6 +290,9 @@ public class AnswersFragment extends FragmentMVP<AnswersPresenter, IAnswers> imp
             }
         }, 3000);
     }
+
+
+
 
     private void pushToCenterParent(TextView textView) {
         int positionXRelativeOfParent = textView.getLeft() + textView.getWidth() / 2;

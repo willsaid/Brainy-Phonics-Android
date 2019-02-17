@@ -49,7 +49,7 @@
       "highlightWord": "at",
       "audioFileName": "Kindergarten Sight Words/at-1 A mirror lets you have a good look at yourself;",
       "imageFileName": "Kindergarten Sight Words Art/at-1 mirror.jpg",
-      "text": "a mirror lets you have a good look at yourself."
+      "text": "A mirror lets you have a good look at yourself."
     },
     "text": "at",
     "secondSentence": {
@@ -101,7 +101,7 @@
       "highlightWord": "brown",
       "audioFileName": "Kindergarten Sight Words/brown-1 A brown hat looks better with a feather;",
       "imageFileName": "Kindergarten Sight Words Art/brown-1 hat.jpg",
-      "text": "a brown hat looks better with a feather."
+      "text": "A brown hat looks better with a feather."
     }
   },
   {
@@ -169,14 +169,14 @@
       "highlightWord": "eat",
       "audioFileName": "Kindergarten Sight Words/eat-2 A stegasaurus would eat nothing but plants;",
       "imageFileName": "Kindergarten Sight Words Art/eat-2 stegasaurus.jpg",
-      "text": "a stegosaurus would eat nothing but plants."
+      "text": "A stegosaurus would eat nothing but plants."
     },
     "text": "eat",
     "firstSentence": {
       "highlightWord": "eat",
       "audioFileName": "Kindergarten Sight Words/eat-1 A T-Rex would eat only meat;",
       "imageFileName": "Kindergarten Sight Words Art/eat-1 T-Rex.jpeg",
-      "text": "a T-Rex would eat only meat."
+      "text": "A T-Rex would eat only meat."
     }
   },
   {
@@ -184,7 +184,7 @@
       "highlightWord": "four",
       "audioFileName": "Kindergarten Sight Words/four-2 A fork usually has four sharp little tines;",
       "imageFileName": "Kindergarten Sight Words Art/four-2 fork.jpg",
-      "text": "a fork usually has four sharp little tines."
+      "text": "A fork usually has four sharp little tines."
     },
     "text": "four",
     "firstSentence": {
@@ -199,7 +199,7 @@
       "highlightWord": "get",
       "audioFileName": "Kindergarten Sight Words/get-2 A puddle is a fine place to get wet;",
       "imageFileName": "Kindergarten Sight Words Art/get-2 puddle.jpg",
-      "text": "a puddle is a fine place to get wet."
+      "text": "A puddle is a fine place to get wet."
     },
     "text": "get",
     "firstSentence": {
@@ -229,7 +229,7 @@
       "highlightWord": "have",
       "audioFileName": "Kindergarten Sight Words/have-2 A painter must have paints to paint;",
       "imageFileName": "Kindergarten Sight Words Art/have-2 paint.jpg",
-      "text": "a painter must have paints to paint."
+      "text": "A painter must have paints to paint."
     },
     "text": "have",
     "firstSentence": {
@@ -378,7 +378,7 @@
     "firstSentence": {
       "highlightWord": "our",
       "audioFileName": "Kindergarten Sight Words/our-1 Our ears are listening;",
-      "imageFileName": "Kindergarten Sight Words Art/our-1 daughter.jpg",
+      "imageFileName": "Kindergarten Sight Words Art/our-2 ears.jpg",
       "text": "Our ears are listening."
     },
     "text": "our",
@@ -551,7 +551,7 @@
       "highlightWord": "that",
       "audioFileName": "Kindergarten Sight Words/that-1 A bully like that behaves very, very badly;",
       "imageFileName": "Kindergarten Sight Words Art/that-1 hit (bully).jpg",
-      "text": "a bully like that behaves very, very badly."
+      "text": "A bully like that behaves very, very badly."
     }
   },
   {
@@ -611,7 +611,7 @@
       "highlightWord": "too",
       "audioFileName": "Kindergarten Sight Words/too-1 Two Queens is one queen too many;",
       "imageFileName": "Kindergarten Sight Words Art/too-1 queens-Sketch.jpg",
-      "text": "Two Queens is one queen too many."
+      "text": "Two queens is one queen too many."
     }
   },
   {
@@ -649,7 +649,7 @@
       "highlightWord": "was",
       "audioFileName": "Kindergarten Sight Words/was-1 A mermaid was a good swimmer, but only pretend;",
       "imageFileName": "Kindergarten Sight Words Art/was-1 mermaid.jpg",
-      "text": "a mermaid was a good swimmer, but only pretend."
+      "text": "A mermaid was a good swimmer, but only pretend."
     },
     "text": "was",
     "firstSentence": {
@@ -754,7 +754,7 @@
       "highlightWord": "with",
       "audioFileName": "Kindergarten Sight Words/with-2 The cook stirs the cauldron with a ladle;",
       "imageFileName": "Kindergarten Sight Words Art/with-2 cook.jpg",
-      "text": "The cook stirs the cauldron with a ladle."
+      "text": "The cook stirs the cauldron pot with a ladle."
     },
     "text": "with",
     "firstSentence": {

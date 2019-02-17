@@ -18,7 +18,6 @@ import com.hearatale.phonics.data.model.typedef.SightWordsCategoryDef;
 import com.hearatale.phonics.data.prefs.AppPreferencesHelper;
 import com.hearatale.phonics.data.prefs.PreferencesHelper;
 import com.hearatale.phonics.utils.Config;
-import com.hearatale.phonics.utils.DebugLog;
 import com.hearatale.phonics.utils.Helper;
 import com.hearatale.phonics.utils.Utils;
 
@@ -101,6 +100,14 @@ public class AppDataManager implements DataManager {
             }
         }
         return localInstance;
+    }
+
+    public void setAnswersWithoutMistake(String sightWord, int answersWithoutMistake) {
+        mPreferencesHelper.setAnswersWithoutMistake(sightWord, answersWithoutMistake);
+    }
+
+    public int getAnswersWithoutMistake(String sightWord) {
+        return mPreferencesHelper.getAnswersWithoutMistake(sightWord);
     }
 
     @Override
@@ -436,23 +443,23 @@ public class AppDataManager implements DataManager {
     }
 
     @Override
-    public void setTotalGoldCount(int count) {
-        mPreferencesHelper.setTotalGoldCount(count);
+    public void setTotalGoldCount(String appFeature, int count) {
+        mPreferencesHelper.setTotalGoldCount(appFeature, count);
     }
 
     @Override
-    public int getTotalGoldCount() {
-        return mPreferencesHelper.getTotalGoldCount();
+    public int getTotalGoldCount(String appFeature) {
+        return mPreferencesHelper.getTotalGoldCount(appFeature);
     }
 
     @Override
-    public void setTotalSilverCount(int count) {
-        mPreferencesHelper.setTotalSilverCount(count);
+    public void setTotalSilverCount(String appFeature, int count) {
+        mPreferencesHelper.setTotalSilverCount(appFeature, count);
     }
 
     @Override
-    public int getTotalSilverCount() {
-        return mPreferencesHelper.getTotalSilverCount();
+    public int getTotalSilverCount(String appFeature) {
+        return mPreferencesHelper.getTotalSilverCount(appFeature);
     }
 
     @Override
@@ -466,10 +473,17 @@ public class AppDataManager implements DataManager {
     }
 
     @Override
-    public Spannable decorateWord(String wordText, String textHighlight, int color) {
+    public Spannable decorateWord(String wordText, String textHighlight, int color, String soundId) {
         String soundText = textHighlight.toLowerCase();
 
         wordText = wordText.toLowerCase();
+        //remove higlighting from second 'a' in afraid
+        if (wordText.equals("afraid") && soundId.equals("schwa")) {
+            wordText = "afraid";
+            Spannable spannable = new SpannableString(wordText);
+            spannable.setSpan(new ForegroundColorSpan(color), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            return spannable;
+        }
 
         if (wordText.equals("saint bernard")) {
             wordText = "Saint Bernard";

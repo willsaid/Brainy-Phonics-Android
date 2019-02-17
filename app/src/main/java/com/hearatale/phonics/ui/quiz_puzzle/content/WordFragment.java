@@ -3,6 +3,7 @@ package com.hearatale.phonics.ui.quiz_puzzle.content;
 
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
@@ -32,17 +33,21 @@ import com.hearatale.phonics.data.AppDataManager;
 import com.hearatale.phonics.data.model.phonics.letters.LetterModel;
 import com.hearatale.phonics.data.model.phonics.letters.TimedAudioInfoModel;
 import com.hearatale.phonics.data.model.phonics.letters.WordModel;
+import com.hearatale.phonics.data.model.typedef.DifficultyDef;
 import com.hearatale.phonics.service.AudioPlayerHelper;
 import com.hearatale.phonics.ui.custom_view.PHTransitionListener;
+import com.hearatale.phonics.ui.quiz_sight_words.answers.AnswersPresenter;
 import com.hearatale.phonics.utils.Config;
 import com.hearatale.phonics.utils.DebugLog;
 import com.hearatale.phonics.utils.Helper;
 import com.hearatale.phonics.utils.glide.GlideApp;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -97,11 +102,23 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
 
     private int[] mWordSize = new int[2];
 
+    int mLetterModeDef = DifficultyDef.EASY;
+
+    int mGuessCount = 0;
+
+    AnswersPresenter mPresenter;
+
+    private String appFeature;
+
+    Handler handlerSchedule = new Handler();
+    Handler handlerForFlyCoin = new Handler();
+
+
     public WordFragment() {
         // Required empty public constructor
     }
 
-    public static WordFragment newInstance(LetterModel letter, List<WordModel> selectedWords, boolean puzzleRandom, int[] wordSize) {
+    public static WordFragment newInstance(LetterModel letter, List<WordModel> selectedWords, boolean puzzleRandom, int[] wordSize, int mLetterModeDef) {
         WordFragment fragment = new WordFragment();
         Bundle args = new Bundle();
         ArrayList<WordModel> words = new ArrayList<>(selectedWords);
@@ -109,6 +126,7 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
         args.putParcelable(ARG_LETTER, letter);
         args.putBoolean(ARG_PUZZLE_RANDOM, puzzleRandom);
         args.putIntArray(ARG_WORD_SIZE, wordSize);
+        args.putInt("ARG_MODE", mLetterModeDef);
         fragment.setArguments(args);
         return fragment;
     }
@@ -128,12 +146,46 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mPresenter = new AnswersPresenter();
         if (getArguments() != null) {
             mLetter = getArguments().getParcelable(ARG_LETTER);
             mPuzzleRandom = getArguments().getBoolean(ARG_PUZZLE_RANDOM, false);
             mSelectedWords = getArguments().getParcelableArrayList(ARG_SELECTED_WORDS);
             mWordSize = getArguments().getIntArray(ARG_WORD_SIZE);
+            mLetterModeDef = getArguments().getInt("ARG_MODE");
+            if (mLetterModeDef == DifficultyDef.EASY) {
+                getLetterAnswerChoices();
+            }
+            if (mLetterModeDef == DifficultyDef.EASY) {
+                appFeature = "ALPHABET_LETTERS";
+            } else {
+                appFeature = "PHONICS";
+            }
         }
+    }
+
+    public void getLetterAnswerChoices() {
+        List<String> answerChoices = new ArrayList<>();
+        answerChoices.add(mLetter.getSourceLetter());
+        //random incorrect letter choices
+        Random random = new Random();
+        String randomLetter;
+        int index = 0;
+        while (index < 3) {
+            randomLetter = (char)('A' + random.nextInt(25)) + "";
+            if (!answerChoices.contains(randomLetter)) {
+                answerChoices.add(randomLetter);
+                index++;
+            }
+        }
+
+        for (int i = 0; i < mSelectedWords.size(); i++) {
+            mSelectedWords.get(i).setAnswer(false);
+            mSelectedWords.get(i).setText(answerChoices.get(i));
+        }
+
+        mSelectedWords.get(0).setAnswer(true);
+        Collections.shuffle(mSelectedWords);
     }
 
     @Override
@@ -177,9 +229,9 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
             mapViewWord = null;
         }
 
-        if (mListener != null) {
-            mListener = null;
-        }
+//        if (mListener != null) {
+//            mListener = null;
+//        }
         super.onDestroyView();
 
     }
@@ -187,7 +239,7 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
 
     private void initViews() {
 
-        if (mPuzzleRandom) {
+        if (mPuzzleRandom || mLetterModeDef == DifficultyDef.EASY) {
             // show 4 piece
             layoutTopEz.setVisibility(View.GONE);
             layoutStandardTopLeft.setVisibility(View.VISIBLE);
@@ -318,8 +370,11 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
                     }
                     break;
                 case MotionEvent.ACTION_DOWN:
-                    mListener.onPlayAudio(selectedWord.getTimedAudioInfo());
-                    if (null == mCurrentView) {
+                    if (mLetterModeDef == DifficultyDef.EASY) {
+                        mListener.onPlayAudio("Audio/Sounds/sound-" + mLetter.getSourceLetter());
+                    } else {
+                        mListener.onPlayAudio(selectedWord.getTimedAudioInfo());
+                    }                    if (null == mCurrentView) {
                         mCurrentView = v;
                         mListener.onZoomIn(mCurrentView);
                     }
@@ -336,7 +391,11 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
                     if (null == mCurrentView) {
                         mCurrentView = v;
                         mListener.onZoomIn(mCurrentView);
-                        mListener.onPlayAudio(selectedWord.getTimedAudioInfo());
+                        if (mLetterModeDef == DifficultyDef.EASY) {
+                            mListener.onPlayAudio("Audio/Sounds/sound-" + mLetter.getSourceLetter());
+                        } else {
+                            mListener.onPlayAudio(selectedWord.getTimedAudioInfo());
+                        }
                     } else if (!mCurrentView.equals(v)) {
                         // touch on other view zoom out
                         // remove old
@@ -344,8 +403,11 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
 
                         // play new
                         mCurrentView = v;
-                        mListener.onPlayAudio(selectedWord.getTimedAudioInfo());
-                        mListener.onZoomIn(mCurrentView);
+                        if (mLetterModeDef == DifficultyDef.EASY) {
+                            mListener.onPlayAudio("Audio/Sounds/sound-" + mLetter.getSourceLetter());
+                        } else {
+                            mListener.onPlayAudio(selectedWord.getTimedAudioInfo());
+                        }                        mListener.onZoomIn(mCurrentView);
                     }
 
                     break;
@@ -395,6 +457,8 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
 
                                                             if (mListener != null) {
                                                                 mListener.onCorrectAnswer(mPuzzleCompleted, xCorrect, yCorrect);
+                                                                mGuessCount++;
+                                                                animateFlyCoin();
                                                             }
 
                                                             resetState();
@@ -428,6 +492,7 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
                     } else {
 
                         mListener.onInCorrectAnswer();
+                        mGuessCount++;
                         // shake
                         mListener.onShake(v);
 
@@ -445,6 +510,66 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
         return true;
     }
 
+    public void animateFlyCoin() {
+
+
+        switch (mGuessCount) {
+            case 1:
+                mPresenter.increaseTotalGoldCoins(appFeature);
+                break;
+            case 2:
+                mPresenter.increaseTotalSilverCoins(appFeature);
+                break;
+        }
+
+
+        handlerForFlyCoin.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+
+                if (mListener != null) {
+                    int positionXCorrectAnswers = Helper.getRelativeLeft(layoutLetter) + layoutLetter.getWidth() / 2;
+                    int positionYCorrectAnswers = Helper.getRelativeTop(layoutLetter) + layoutLetter.getHeight() / 2;
+
+                    switch (mGuessCount) {
+                        case 1:
+                            mListener.animateCoinFlyToPiggyBank(positionXCorrectAnswers, positionYCorrectAnswers, true);
+                            break;
+                        case 2:
+                            mListener.animateCoinFlyToPiggyBank(positionXCorrectAnswers, positionYCorrectAnswers, false);
+                            break;
+                    }
+                    DebugLog.i("FLY");
+                }
+            }
+        }, 0);
+
+
+        //After 3s
+        handlerSchedule.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+//                mCurrentlyAnimating = false;
+
+                int goldCount = mPresenter.getTotalGoldCount(appFeature);
+                int silverCount = mPresenter.getTotalSilverCount(appFeature);
+                int totalGold = goldCount + silverCount / 2;
+
+                if (totalGold > 0 && totalGold % 125 == 0) {
+                    if (mListener != null) {
+                        mListener.goToBank();
+                    }
+                }
+//                else {
+//                    if (mListener != null) {
+//                        mListener.requiredNewWord();
+//                    }
+//                }
+            }
+        }, 1000);
+
+    }
+
     private void resetState() {
         mPuzzleCompleted = 2;
     }
@@ -458,43 +583,52 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
 //            view.setOnClickListener(this);
             view.setOnTouchListener(this);
 
-            WordModel word = mSelectedWords.get(i);
+            final WordModel word = mSelectedWords.get(i);
             final ImageView imageView = view.findViewById(R.id.image_letter);
             TextView textView = view.findViewById(R.id.text_letter);
             textView.setVisibility(View.INVISIBLE);
 
             mapViewWord.put(view, word);
-
             String urlArtwork = Config.IMAGES_WORD_BY_LETTER_PATH + word.getText() + ".jpg";
-            GlideApp
-                    .with(Application.Context)
-                    .load(urlArtwork)
-                    .override(mWordSize[0], mWordSize[1])
-                    .disallowHardwareConfig()
-                    .into(new CustomViewTarget<ImageView, Drawable>(imageView) {
-                        @Override
-                        public void onLoadFailed(@Nullable Drawable errorDrawable) {
-                            DebugLog.e("");
-                        }
 
-                        @Override
-                        public void onResourceReady(@NonNull Drawable resource, @Nullable com.bumptech.glide.request.transition.Transition<? super Drawable> transition) {
-                            DebugLog.e("");
-                            imageView.setImageDrawable(resource);
-                        }
+            if (mLetterModeDef == DifficultyDef.STANDARD) {
+                GlideApp
+                        .with(Application.Context)
+                        .load(urlArtwork)
+                        .override(mWordSize[0], mWordSize[1])
+                        .disallowHardwareConfig()
+                        .into(new CustomViewTarget<ImageView, Drawable>(imageView) {
+                            @Override
+                            public void onLoadFailed(@Nullable Drawable errorDrawable) {
+                                DebugLog.e("");
+                            }
 
-                        @Override
-                        protected void onResourceCleared(@Nullable Drawable placeholder) {
-                            DebugLog.e("");
-                        }
-                    });
+                            @Override
+                            public void onResourceReady(@NonNull Drawable resource, @Nullable com.bumptech.glide.request.transition.Transition<? super Drawable> transition) {
+                                DebugLog.e("");
+                                imageView.setImageDrawable(resource);
+                            }
 
-            Spanned wordText = AppDataManager
-                    .getInstance()
-                    .decorateWord(mSelectedWords.get(i).getText(),
-                            mLetter.getDisplayString().toLowerCase(),
-                            getResources().getColor(R.color.colorAccent));
-            textView.setText(wordText);
+                            @Override
+                            protected void onResourceCleared(@Nullable Drawable placeholder) {
+                                DebugLog.e("");
+                            }
+                        });
+
+                Spanned wordText = AppDataManager
+                        .getInstance()
+                        .decorateWord(mSelectedWords.get(i).getText(),
+                                mLetter.getDisplayString().toLowerCase(),
+                                getResources().getColor(R.color.colorAccent), mLetter.getSoundId());
+                textView.setText(wordText);
+            } else {
+                imageView.setVisibility(View.GONE);
+                textView.setVisibility(View.GONE);
+                final TextView textView1 = view.findViewById(R.id.text_letter1);
+                textView1.setVisibility(View.VISIBLE);
+
+                textView1.setText(word.getText() + " " + word.getText().toLowerCase());
+            }
 
             TimedAudioInfoModel audioInfo = word.getTimedAudioInfo();
             if (TextUtils.isEmpty(audioInfo.getFileName())) {
@@ -520,6 +654,8 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
 
         void onLetterClick();
 
+        void onPlayAudio(String path);
+
         void onPlayAudio(TimedAudioInfoModel audioInfo);
 
         void onZoomIn(View v);
@@ -527,6 +663,10 @@ public class WordFragment extends Fragment implements View.OnClickListener, View
         void onZoomOut(View v, TimedAudioInfoModel audioInfo);
 
         void onShake(View v);
+
+        void animateCoinFlyToPiggyBank(int positionXCorrect, int positionYCorrect, boolean isCoinGold);
+
+        void goToBank();
     }
 
     public interface SelectedWordLifeCycleListener {

@@ -1,7 +1,6 @@
 package com.hearatale.phonics.ui.sentence.content;
 
 
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -344,8 +343,8 @@ public class SentenceContentFragment extends Fragment {
                 .override(mImageFocusSize[0], mImageFocusSize[1])
                 .into(iv);
 
-        tv.setText(getWordDecorator(sentence.getText(), sentence.getHighlightWord()));
 
+        tv.setText(getWordDecorator(sentence.getText(), sentence.getHighlightWord()));
     }
 
 

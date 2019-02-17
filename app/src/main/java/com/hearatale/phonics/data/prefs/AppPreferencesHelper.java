@@ -3,7 +3,6 @@ package com.hearatale.phonics.data.prefs;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.text.TextUtils;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -43,6 +42,15 @@ public class AppPreferencesHelper implements PreferencesHelper {
         mGson = new GsonBuilder()
                 .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSz")
                 .create();
+    }
+
+    public void setAnswersWithoutMistake(String sightWord, int answersWithoutMistake) {
+        mEditor.putInt(sightWord, answersWithoutMistake);
+        mEditor.apply();
+    }
+
+    public int getAnswersWithoutMistake(String sightWord) {
+        return mPref.getInt(sightWord, 0);
     }
 
     @Override
@@ -215,25 +223,25 @@ public class AppPreferencesHelper implements PreferencesHelper {
     }
 
     @Override
-    public void setTotalGoldCount(int count) {
-        mEditor.putInt(Constants.Preferences.TOTAL_GOLD_COINS, count);
+    public void setTotalGoldCount(String appFeature, int count) {
+        mEditor.putInt(Constants.Preferences.TOTAL_GOLD_COINS + appFeature, count);
         mEditor.apply();
     }
 
     @Override
-    public int getTotalGoldCount() {
-        return mPref.getInt(Constants.Preferences.TOTAL_GOLD_COINS, 0);
+    public int getTotalGoldCount(String appFeature) {
+        return mPref.getInt(Constants.Preferences.TOTAL_GOLD_COINS + appFeature, 0);
     }
 
     @Override
-    public void setTotalSilverCount(int count) {
-        mEditor.putInt(Constants.Preferences.TOTAL_SILVER_COINS, count);
+    public void setTotalSilverCount(String appFeature, int count) {
+        mEditor.putInt(Constants.Preferences.TOTAL_SILVER_COINS + appFeature, count);
         mEditor.apply();
     }
 
     @Override
-    public int getTotalSilverCount() {
-        return mPref.getInt(Constants.Preferences.TOTAL_SILVER_COINS, 0);
+    public int getTotalSilverCount(String appFeature) {
+        return mPref.getInt(Constants.Preferences.TOTAL_SILVER_COINS + appFeature, 0);
     }
 
     @Override

@@ -16,6 +16,10 @@ public interface DataManager extends PreferencesHelper {
 
     boolean isPuzzleCompleted(String sourceSoundId);
 
+    public void setAnswersWithoutMistake(String sightWord, int answersWithoutMistake);
+
+    public int getAnswersWithoutMistake(String sightWord);
+
     List<WordModel> getAllWords();
 
     List<WordModel> getAllWordsNoduplicate();
@@ -34,6 +38,6 @@ public interface DataManager extends PreferencesHelper {
 
     List<SightWordModel> getSightWords(@SightWordsCategoryDef int category);
 
-    public Spannable decorateWord(String wordText, String textHighlight, int color);
+    public Spannable decorateWord(String wordText, String textHighlight, int color, String soundID);
 
 }

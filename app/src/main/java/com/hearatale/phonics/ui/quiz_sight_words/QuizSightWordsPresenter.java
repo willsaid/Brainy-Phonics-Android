@@ -7,11 +7,8 @@ import com.hearatale.phonics.data.DataManager;
 import com.hearatale.phonics.data.model.event.StarEvent;
 import com.hearatale.phonics.data.model.phonics.SightWordModel;
 import com.hearatale.phonics.data.model.typedef.SightWordsCategoryDef;
-import com.hearatale.phonics.data.model.typedef.SightWordsModeDef;
 import com.hearatale.phonics.data.network.api.base.async.BackgroundTask;
-import com.hearatale.phonics.service.AudioPlayerHelper;
 import com.hearatale.phonics.ui.base.activity.PresenterMVP;
-import com.hearatale.phonics.utils.Config;
 
 import org.greenrobot.eventbus.EventBus;
 
@@ -64,8 +61,16 @@ public class QuizSightWordsPresenter extends PresenterMVP<IQuizSightWords> imple
         return mDataManager.arrayHasHomophoneConflicts(items);
     }
 
-    public int getTotalGoldCount() {
-        return mDataManager.getTotalGoldCount();
+    public int getTotalGoldCount(String appFeature) {
+        return mDataManager.getTotalGoldCount(appFeature);
+    }
+
+    public void setAnswersWithoutMistake(String sightWord, int answersWithoutMistake) {
+        mDataManager.setAnswersWithoutMistake(sightWord, answersWithoutMistake);
+    }
+
+    public int getAnswersWithoutMistake(String sightWord) {
+        return mDataManager.getAnswersWithoutMistake(sightWord);
     }
 
     public void saveStarCount(final SightWordModel sightWordModel, final int count) {

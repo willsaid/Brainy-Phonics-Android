@@ -11,12 +11,12 @@ public class BankPresenter extends PresenterMVP<IBank> implements IBankPresenter
         mDataManager = AppDataManager.getInstance();
     }
 
-    public int getTotalGoldCount(){
-        return mDataManager.getTotalGoldCount();
+    public int getTotalGoldCount(String appFeature){
+        return mDataManager.getTotalGoldCount(appFeature);
     }
 
-    public int getTotalSilverCount(){
-        return mDataManager.getTotalSilverCount();
+    public int getTotalSilverCount(String appFeature){
+        return mDataManager.getTotalSilverCount(appFeature);
     }
 
 }

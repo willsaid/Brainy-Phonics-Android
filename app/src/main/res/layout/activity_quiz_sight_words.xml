@@ -21,50 +21,45 @@
             android:layout_marginTop="8dp"
             android:padding="@dimen/dp_8"
             android:src="@mipmap/back"
+            app:layout_constraintEnd_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageView
+            android:id="@+id/image_view_menu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/dp_8"
+            android:src="@mipmap/list"
+            android:visibility="visible"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toBottomOf="@id/image_view_back" />
 
 
     </android.support.constraint.ConstraintLayout>
 
-    <LinearLayout
-        android:id="@+id/layout_instruction"
+    <ImageView
+        android:id="@+id/image_stars"
         android:layout_width="wrap_content"
-        android:layout_height="80dp"
-        android:animateLayoutChanges="true"
-        android:background="@drawable/shape_instructions"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
+        android:src="@mipmap/star_5"
         app:layout_constraintBottom_toTopOf="@+id/layout_content_answer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/toolbar_layout"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/image_view_instruction"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_marginEnd="@dimen/dp_16"
-            android:layout_marginStart="@dimen/dp_20"
-            android:src="@mipmap/question" />
-
-        <TextView
-            android:id="@+id/text_view_instruction"
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_marginEnd="@dimen/dp_20"
-            android:gravity="center_vertical"
-            android:text="Choose the word"
-            android:textSize="24sp" />
-
-    </LinearLayout>
+    </ImageView>
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/layout_content_answer"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/toolbar_layout"
         app:layout_constraintTop_toBottomOf="@+id/layout_instruction">
 

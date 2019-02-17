@@ -1,6 +1,5 @@
 package com.hearatale.phonics.ui.adapter.simple_alphabet;
 
-import android.media.Image;
 import android.net.Uri;
 import android.support.annotation.ColorRes;
 import android.support.annotation.NonNull;
@@ -8,23 +7,18 @@ import android.support.annotation.Nullable;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
+import android.widget.ProgressBar;
 
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
-import com.hearatale.phonics.Application;
 import com.hearatale.phonics.R;
-import com.hearatale.phonics.data.model.phonics.SightWordModel;
 import com.hearatale.phonics.data.model.phonics.letters.SimpleLetterModel;
 import com.hearatale.phonics.data.model.typedef.DifficultyDef;
+import com.hearatale.phonics.ui.quiz_puzzle.QuizPuzzlePresenter;
 import com.hearatale.phonics.utils.Config;
-import com.hearatale.phonics.utils.FontsHelper;
-import com.hearatale.phonics.utils.Helper;
 import com.hearatale.phonics.utils.glide.GlideApp;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleAlphabetAdapter extends BaseQuickAdapter<SimpleLetterModel, BaseViewHolder> {
@@ -32,6 +26,8 @@ public class SimpleAlphabetAdapter extends BaseQuickAdapter<SimpleLetterModel, B
     int sizeImage;
     @DifficultyDef
     int mDifficulty;
+
+    QuizPuzzlePresenter mPresenter = new QuizPuzzlePresenter();
 
     public SimpleAlphabetAdapter(@Nullable List<SimpleLetterModel> data, int sizeImage, @DifficultyDef int difficulty) {
         super(R.layout.item_alphabet, data);
@@ -47,11 +43,18 @@ public class SimpleAlphabetAdapter extends BaseQuickAdapter<SimpleLetterModel, B
 
     @Override
     protected void convert(BaseViewHolder helper, SimpleLetterModel item) {
+        ImageView imageView = helper.getView(R.id.image_avatar);
+        if (mDifficulty == DifficultyDef.EASY) {
+            ProgressBar progressBar = helper.getView(R.id.progress_bar);
+            progressBar.setVisibility(View.GONE);
+            imageView.setVisibility(View.GONE);
+        }
+
         String text;
         if (mDifficulty == DifficultyDef.EASY) {
             String letterUpperCase = item.getLetter().toUpperCase();
             String letterLowerCase = item.getLetter().toLowerCase();
-            text = letterUpperCase + letterLowerCase;
+            text = letterUpperCase + " " + letterLowerCase;
         } else {
             @ColorRes int colorRes = R.color.black_alphabet;
             switch (item.getColorString()) {
@@ -60,6 +63,9 @@ public class SimpleAlphabetAdapter extends BaseQuickAdapter<SimpleLetterModel, B
                     break;
                 case "green":
                     colorRes = R.color.green_alphabet;
+                    break;
+                case "blue":
+                    colorRes = R.color.blue;
                     break;
                 case "purple":
                     colorRes = R.color.purple_alphabet;
@@ -75,23 +81,39 @@ public class SimpleAlphabetAdapter extends BaseQuickAdapter<SimpleLetterModel, B
         int totalProgress = Config.PUZZLE_COLUMNS * Config.PUZZLE_ROWS;
         boolean isComplete = item.getProgressCompleted() == totalProgress;
         helper.setMax(R.id.progress_bar, totalProgress);
-        helper.setVisible(R.id.image_done, isComplete);
+
 
         ImageView imageViewStars = helper.getView(R.id.image_stars);
 
-        if (isComplete) {
-            setImageDrawableResStar(imageViewStars, item.getStarConsecutive());
+//        if (isComplete) {
+        int starCount;
+        if (mDifficulty == DifficultyDef.EASY) {
+            starCount = mPresenter.getStarConsecutive(item.getId() + "ALPHABET_LETTERS_Stars");
         } else {
-            imageViewStars.setVisibility(View.INVISIBLE);
+            starCount = mPresenter.getStarConsecutive(item.getId() + "PHONICS_Stars");
+        }
+        setImageDrawableResStar(imageViewStars, starCount);
+
+        if (mDifficulty == DifficultyDef.STANDARD) {
+            helper.setVisible(R.id.image_done, isComplete);
+        } else {
+            if (starCount >= 5) {
+                helper.setVisible(R.id.image_done, true);
+            }
         }
 
-        ImageView imageView = helper.getView(R.id.image_avatar);
-        GlideApp.with(mContext)
-                .load(Uri.parse(item.getPathImage()))
-                .skipMemoryCache(true)
-                .diskCacheStrategy(DiskCacheStrategy.NONE)
-                .override(sizeImage)
-                .into(imageView);
+//        } else {
+//            imageViewStars.setVisibility(View.INVISIBLE);
+//        }
+
+        if (mDifficulty == DifficultyDef.STANDARD) {
+            GlideApp.with(mContext)
+                    .load(Uri.parse(item.getPathImage()))
+                    .skipMemoryCache(true)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .override(sizeImage)
+                    .into(imageView);
+        }
     }
 
     private void setImageDrawableResStar(ImageView imageView, int starConsecutive) {
@@ -103,8 +125,11 @@ public class SimpleAlphabetAdapter extends BaseQuickAdapter<SimpleLetterModel, B
         switch (starConsecutive) {
 
             case 0:
-            case 1:
                 imageView.setVisibility(View.INVISIBLE);
+                break;
+            case 1:
+                GlideApp.with(mContext).load(R.mipmap.star).into(imageView);
+                break;
             case 2:
                 GlideApp.with(mContext).load(R.mipmap.star_2).into(imageView);
                 break;

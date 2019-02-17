@@ -16,20 +16,30 @@ import org.greenrobot.eventbus.EventBus;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class QuizPuzzlePresenter extends PresenterMVP<IQuizPuzzle> implements IQuizPuzzlePresenter {
 
     private DataManager mDataManager;
 
-    QuizPuzzlePresenter() {
+    public QuizPuzzlePresenter() {
         mDataManager = AppDataManager.getInstance();
     }
 
-    private List<WordModel> mAllPossibleWord = new ArrayList<>();
+    private CopyOnWriteArrayList<WordModel> mAllPossibleWord = new CopyOnWriteArrayList<>();
     private LetterModel mLetter = new LetterModel();
     private List<WordModel> mAnswerWords = new ArrayList<>();
     private int mCurrentPosition = 0;
 
+    @Override
+    public void setAnswersWithoutMistake(String sightWord, int answersWithoutMistake) {
+        mDataManager.setAnswersWithoutMistake(sightWord, answersWithoutMistake);
+    }
+
+    @Override
+    public int getAnswersWithoutMistake(String sightWord) {
+        return mDataManager.getAnswersWithoutMistake(sightWord);
+    }
 
     @Override
     public void savePuzzlePiece(String displayLetter, PuzzlePieceModel puzzlePiece) {
@@ -69,17 +79,72 @@ public class QuizPuzzlePresenter extends PresenterMVP<IQuizPuzzle> implements IQ
     }
 
     @Override
-    public List<WordModel> getSelectedWords(LetterModel letter, boolean puzzleRandom) {
+    public CopyOnWriteArrayList<WordModel> getSelectedWords(LetterModel letter, boolean puzzleRandom) {
 
         if (mLetter != letter) {
             mLetter = letter;
-            mAllPossibleWord = mDataManager.getAllPossibleWords(mLetter);
+            mAllPossibleWord = new CopyOnWriteArrayList(mDataManager.getAllPossibleWords(mLetter));
+
+            //If soundID = "AW", remove incorrect answer choices that contain letter 'o'
+            if (letter.getSoundId().equals("AW")) {
+                for (WordModel word : mAllPossibleWord) {
+                    if (word.getText().contains("o")) {
+                        mAllPossibleWord.remove(word);
+                    }
+                }
+            }
+
+            //If soundID = "ET", remove incorrect answer choices that contain phrase 'et'
+            if (letter.getSoundId().equals("ET")) {
+                for (WordModel word : mAllPossibleWord) {
+                    if (word.getText().contains("et")) {
+                        mAllPossibleWord.remove(word);
+                    }
+                }
+            }
+
+            if (letter.getSourceLetter().equals("E") && letter.getSoundId().equals("schwa")) {
+                for (WordModel word : mAllPossibleWord) {
+                    if (word.getText().contains("dandelion")) {
+                        mAllPossibleWord.remove(word);
+                    }
+                }
+            }
+
+
+            if (letter.getSoundId().equals("wuh")) {
+                for (WordModel word : mAllPossibleWord) {
+                    if (word.getText().contains("window")) {
+                        mAllPossibleWord.remove(word);
+                    }
+                }
+            }
+
+            //If soundID = "zz", remove incorrect answer choices that contain letter 'z' or 'c'
+            if (letter.getSoundId().equals("zz")) {
+                for (WordModel word : mAllPossibleWord) {
+                    if (word.getText().contains("z") || word.getText().contains("c")) {
+                        mAllPossibleWord.remove(word);
+                    }
+                }
+            }
+
+            //If soundID = "i", remove incorrect answer choices that contain letter 'i' or 'e'
+            if (letter.getSoundId().equals("i")) {
+                for (WordModel word : mAllPossibleWord) {
+                    if (word.getText().contains("i") || word.getText().contains("e")) {
+                        mAllPossibleWord.remove(word);
+                    }
+                }
+            }
+
+
             mAnswerWords = new ArrayList<>();
             mAnswerWords = letter.getPrimaryWords();
             mAnswerWords.addAll(letter.getQuizWords());
         }
 
-        List<WordModel> selectedWords = new ArrayList<>();
+        CopyOnWriteArrayList<WordModel> selectedWords = new CopyOnWriteArrayList<>();
 
         // get selectedWords puzzleRandom: true -> 4, false -> 3
         int totalWords = puzzleRandom ? 4 : 3;

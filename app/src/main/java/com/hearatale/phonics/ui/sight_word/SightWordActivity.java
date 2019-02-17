@@ -15,10 +15,8 @@ import android.widget.ImageView;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.hearatale.phonics.R;
 import com.hearatale.phonics.data.Constants;
-import com.hearatale.phonics.data.model.event.ProgressPuzzleEvent;
 import com.hearatale.phonics.data.model.event.StarEvent;
 import com.hearatale.phonics.data.model.phonics.SightWordModel;
-import com.hearatale.phonics.data.model.phonics.letters.SimpleLetterModel;
 import com.hearatale.phonics.data.model.typedef.SightWordsCategoryDef;
 import com.hearatale.phonics.data.model.typedef.SightWordsModeDef;
 import com.hearatale.phonics.ui.adapter.sight_word.SightWordAdapter;
@@ -26,7 +24,6 @@ import com.hearatale.phonics.ui.bank.BankActivity;
 import com.hearatale.phonics.ui.base.activity.ActivityMVP;
 import com.hearatale.phonics.ui.custom_view.ItemOffsetDecoration;
 import com.hearatale.phonics.ui.custom_view.PHListener;
-import com.hearatale.phonics.ui.idiom.IdiomActivity;
 import com.hearatale.phonics.ui.main.MainActivity;
 import com.hearatale.phonics.ui.quiz_sight_words.QuizSightWordsActivity;
 import com.hearatale.phonics.ui.sentence.SentenceActivity;
@@ -55,6 +52,9 @@ public class SightWordActivity extends ActivityMVP<SightWordPresenter, ISightWor
     @BindView(R.id.toolbar_layout)
     ConstraintLayout layoutToolbar;
 
+    @BindView(R.id.image_view_check)
+    ImageView imageCheck;
+
     @BindView(R.id.image_view_home)
     ImageView imageHome;
 
@@ -79,11 +79,8 @@ public class SightWordActivity extends ActivityMVP<SightWordPresenter, ISightWor
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sight_word);
         ButterKnife.bind(this);
-
         getArguments();
-
         initViews();
-
         initControls();
     }
 
@@ -144,6 +141,8 @@ public class SightWordActivity extends ActivityMVP<SightWordPresenter, ISightWor
 
         imageQuestion.setImageResource(R.mipmap.bank);
         imagePuzzle.setImageResource(R.mipmap.question);
+
+        imageCheck.setVisibility(View.INVISIBLE);
     }
 
     private void initControls() {
@@ -225,6 +224,12 @@ public class SightWordActivity extends ActivityMVP<SightWordPresenter, ISightWor
         Bitmap bitmapCompress = ImageHelper.compressBySampleSize(bitmap, 12);
 
         intent.putExtra(Constants.Arguments.ARG_BLUR_BITMAP, bitmapCompress);
+
+        if (mCategory == SightWordsCategoryDef.PRE_K) {
+            intent.putExtra("APP_FEATURE", "PRE_K");
+        } else {
+            intent.putExtra("APP_FEATURE", "KINDERGARTEN");
+        }
 
         pushIntent(intent);
 

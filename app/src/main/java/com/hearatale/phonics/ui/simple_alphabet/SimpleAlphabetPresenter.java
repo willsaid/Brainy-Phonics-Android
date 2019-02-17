@@ -12,7 +12,6 @@ import com.hearatale.phonics.ui.base.activity.PresenterMVP;
 import com.hearatale.phonics.utils.Config;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,7 +19,7 @@ public class SimpleAlphabetPresenter extends PresenterMVP<ISimpleAlphabet> imple
 
     DataManager mDataManager;
 
-    SimpleAlphabetPresenter() {
+    public SimpleAlphabetPresenter() {
         mDataManager = AppDataManager.getInstance();
     }
 
@@ -61,12 +60,7 @@ public class SimpleAlphabetPresenter extends PresenterMVP<ISimpleAlphabet> imple
             text = letter.getSourceLetter();
         } else {
 
-            // 2. The picture for letter ‘e’ is an elf; this must be replaced with the ‘tree’ picture.
-            if(letter.getPrimaryWords().get(0).getText().equals("elf")){
-                pathImage = Config.IMAGES_WORD_BY_LETTER_PATH + "tree.jpg";
-            }else {
-                pathImage = Config.IMAGES_WORD_BY_LETTER_PATH + letter.getPrimaryWords().get(0).getText() + ".jpg";
-            }
+            pathImage = Config.IMAGES_WORD_BY_LETTER_PATH + letter.getPrimaryWords().get(0).getText() + ".jpg";
             text = letter.getDisplayString();
 
         }

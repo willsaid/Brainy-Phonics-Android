@@ -1,9 +1,11 @@
 package com.hearatale.phonics.ui.simple_alphabet;
 
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -11,6 +13,7 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.hearatale.phonics.R;
@@ -22,6 +25,7 @@ import com.hearatale.phonics.data.model.phonics.letters.TimedAudioInfoModel;
 import com.hearatale.phonics.data.model.typedef.DifficultyDef;
 import com.hearatale.phonics.service.AudioPlayerHelper;
 import com.hearatale.phonics.ui.adapter.simple_alphabet.SimpleAlphabetAdapter;
+import com.hearatale.phonics.ui.bank.BankActivity;
 import com.hearatale.phonics.ui.base.activity.ActivityMVP;
 import com.hearatale.phonics.ui.custom_view.ItemOffsetDecoration;
 import com.hearatale.phonics.ui.letter.LetterActivity;
@@ -30,6 +34,7 @@ import com.hearatale.phonics.ui.quiz.QuizActivity;
 import com.hearatale.phonics.ui.quiz_puzzle.QuizPuzzleActivity;
 import com.hearatale.phonics.utils.Config;
 import com.hearatale.phonics.utils.Helper;
+import com.hearatale.phonics.utils.ImageHelper;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -46,6 +51,18 @@ public class SimpleAlphabetActivity extends ActivityMVP<SimpleAlphabetPresenter,
 
     @BindView(R.id.recycler_view_grid)
     RecyclerView recyclerView;
+
+    @BindView(R.id.layout_activity)
+    ConstraintLayout layoutActivity;
+
+    @BindView(R.id.image_view_piggy)
+    ImageView imageViewPiggy;
+
+    @BindView(R.id.image_view_puzzle)
+    ImageView imageViewPuzzle;
+
+//    @BindView(R.id.progress_bar)
+//    ProgressBar progressBar;
 
     SimpleAlphabetAdapter mAdapter;
     List<SimpleLetterModel> mListItem;
@@ -85,6 +102,11 @@ public class SimpleAlphabetActivity extends ActivityMVP<SimpleAlphabetPresenter,
         if (mMode == DifficultyDef.STANDARD) {
             recyclerView.setBackgroundColor(getResources().getColor(R.color.blue));
         }
+        if (mMode == DifficultyDef.EASY) {
+//            progressBar.setVisibility(View.GONE);
+            imageViewPuzzle.setVisibility(View.GONE);
+        }
+        imageViewPiggy.setVisibility(View.VISIBLE);
 
         recyclerView.setLayoutManager(new GridLayoutManager(this, 3));
         ItemOffsetDecoration itemDecoration = new ItemOffsetDecoration(this, R.dimen.item_offset);
@@ -196,6 +218,15 @@ public class SimpleAlphabetActivity extends ActivityMVP<SimpleAlphabetPresenter,
         v.startAnimation(animation);
     }
 
+    @OnClick(R.id.image_view_check)
+    void playIntructions() {
+        if (mMode == DifficultyDef.EASY) {
+            AudioPlayerHelper.getInstance().playAudio("Sounds/Win_as_many_as_five_gold_stars");
+        } else {
+            AudioPlayerHelper.getInstance().playAudio("Sounds/Complete a whole puzzle");
+        }
+    }
+
 
     @OnClick(R.id.image_view_puzzle)
     void pushQuizActivity() {
@@ -206,6 +237,7 @@ public class SimpleAlphabetActivity extends ActivityMVP<SimpleAlphabetPresenter,
 
     @OnClick(R.id.image_view_home)
     void backToHome() {
+        AudioPlayerHelper.getInstance().stopPlayer();
         Intent i = new Intent(this, MainActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         startActivity(i);
@@ -221,6 +253,28 @@ public class SimpleAlphabetActivity extends ActivityMVP<SimpleAlphabetPresenter,
         intent.putExtras(args);
         pushIntent(intent);
     }
+
+    @OnClick(R.id.image_view_piggy)
+    void bank() {
+        Intent intent = new Intent(SimpleAlphabetActivity.this, BankActivity.class);
+
+        // screenshot
+        Bitmap bitmap = ImageHelper.getBitmapFromView(layoutActivity, Bitmap.Config.RGB_565);
+        // compress
+        Bitmap bitmapCompress = ImageHelper.compressBySampleSize(bitmap, 12);
+
+        intent.putExtra(Constants.Arguments.ARG_BLUR_BITMAP, bitmapCompress);
+
+        if (mMode == DifficultyDef.EASY) {
+            intent.putExtra("APP_FEATURE", "ALPHABET_LETTERS");
+        } else {
+            intent.putExtra("APP_FEATURE", "PHONICS");
+        }
+
+        pushIntent(intent);
+
+    }
+
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onEventProgressChange(ProgressPuzzleEvent event) {

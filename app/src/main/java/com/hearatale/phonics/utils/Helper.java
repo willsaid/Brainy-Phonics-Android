@@ -11,10 +11,7 @@ import android.view.View;
 import android.view.ViewConfiguration;
 
 import com.hearatale.phonics.Application;
-import com.hearatale.phonics.data.AppDataManager;
 import com.hearatale.phonics.data.model.base.BaseModel;
-import com.hearatale.phonics.data.model.phonics.letters.LetterModel;
-import com.hearatale.phonics.data.model.phonics.letters.PuzzlePieceModel;
 
 import java.io.IOException;
 import java.util.Collections;

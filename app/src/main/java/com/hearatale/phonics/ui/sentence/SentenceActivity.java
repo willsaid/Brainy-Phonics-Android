@@ -22,12 +22,13 @@ import com.hearatale.phonics.data.Constants;
 import com.hearatale.phonics.data.model.phonics.SightWordModel;
 import com.hearatale.phonics.data.model.typedef.SightWordsCategoryDef;
 import com.hearatale.phonics.data.model.typedef.SightWordsModeDef;
+import com.hearatale.phonics.service.AudioPlayerHelper;
 import com.hearatale.phonics.ui.base.activity.ActivityMVP;
 import com.hearatale.phonics.ui.base.fragment.SafeFragmentTransaction;
 import com.hearatale.phonics.ui.main.MainActivity;
 import com.hearatale.phonics.ui.quiz_sight_words.QuizSightWordsActivity;
 import com.hearatale.phonics.ui.sentence.content.SentenceContentFragment;
-import com.hearatale.phonics.utils.DebugLog;
+import com.hearatale.phonics.ui.sight_word.SightWordActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,9 @@ public class SentenceActivity extends ActivityMVP<SentencePresenter, ISentence> 
     // toolbar
     @BindView(R.id.toolbar_layout)
     ConstraintLayout layoutToolbar;
+
+    @BindView(R.id.image_view_check)
+    ImageView imageCheck;
 
     @BindView(R.id.image_view_home)
     ImageView imageHome;
@@ -166,6 +170,8 @@ public class SentenceActivity extends ActivityMVP<SentencePresenter, ISentence> 
         imagePuzzle.setImageResource(R.mipmap.repeat);
         imageQuestion.setVisibility(View.INVISIBLE);
 
+        imageCheck.setVisibility(View.INVISIBLE);
+
         animationButtonQuiz();
     }
 
@@ -210,7 +216,15 @@ public class SentenceActivity extends ActivityMVP<SentencePresenter, ISentence> 
 
     @OnClick(R.id.image_view_menu)
     void onMenu() {
-        onBackPressed();
+        AudioPlayerHelper.getInstance().stopPlayer();
+        Intent intent = new Intent(SentenceActivity.this, SightWordActivity.class);
+        if (mCategory == SightWordsCategoryDef.PRE_K) {
+            intent.putExtra(Constants.Arguments.ARG_SIGHT_WORD_MODE, SightWordsCategoryDef.PRE_K);
+        } else {
+            intent.putExtra(Constants.Arguments.ARG_SIGHT_WORD_MODE, SightWordsCategoryDef.KINDERGARTEN);
+        }
+        pushIntent(intent);
+        finish();
     }
 
     @OnClick(R.id.image_view_question)

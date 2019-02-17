@@ -1,6 +1,5 @@
 package com.hearatale.phonics.ui.adapter.sight_word;
 
-import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.view.View;
 import android.widget.ImageView;
@@ -50,6 +49,10 @@ public class SightWordAdapter extends BaseQuickAdapter<SightWordModel, BaseViewH
         ImageView imageViewStars = helper.getView(R.id.image_stars);
         setImageDrawableResStar(imageViewStars, item);
 
+        boolean isComplete = item.getStarCount() >= 5;
+
+        helper.setVisible(R.id.image_done, isComplete);
+
     }
 
     private void setImageDrawableResStar(ImageView imageView, SightWordModel sightWordModel) {
@@ -58,8 +61,11 @@ public class SightWordAdapter extends BaseQuickAdapter<SightWordModel, BaseViewH
         }
         switch (sightWordModel.getStarCount()) {
             case 0:
-            case 1:
                 imageView.setVisibility(View.INVISIBLE);
+                break;
+            case 1:
+                GlideApp.with(mContext).load(R.mipmap.star).into(imageView);
+                break;
             case 2:
                 GlideApp.with(mContext).load(R.mipmap.star_2).into(imageView);
                 break;

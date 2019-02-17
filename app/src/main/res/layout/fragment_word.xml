@@ -5,7 +5,6 @@
     android:id="@+id/layout_letter"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
     android:clipChildren="false"
     android:clipToPadding="false"
     tools:context=".ui.quiz_puzzle.content.WordFragment">

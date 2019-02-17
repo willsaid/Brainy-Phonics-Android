@@ -50,6 +50,9 @@ public class QuizActivity extends ActivityMVP<QuizPresenter, IQuiz> implements I
     @BindView(R.id.toolbar_layout)
     ConstraintLayout layoutToolbar;
 
+    @BindView(R.id.image_view_check)
+    ImageView check;
+
     @BindView(R.id.image_view_menu)
     ImageView imageMenu;
 
@@ -113,6 +116,7 @@ public class QuizActivity extends ActivityMVP<QuizPresenter, IQuiz> implements I
         } else {
             layoutToolbar.setBackgroundColor(getResources().getColor(R.color.blue_dark_standard));
         }
+        check.setVisibility(View.GONE);
         imageMenu.setVisibility(View.VISIBLE);
         imagePuzzle.setVisibility(View.GONE);
         imageQuestion.setVisibility(View.GONE);

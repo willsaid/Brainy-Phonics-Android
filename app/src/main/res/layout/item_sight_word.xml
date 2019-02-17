@@ -16,10 +16,10 @@
         android:layout_gravity="center"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingTop="@dimen/dp_12"
-        android:paddingStart="@dimen/dp_12"
+        android:paddingBottom="@dimen/dp_20"
         android:paddingEnd="@dimen/dp_12"
-        android:paddingBottom="@dimen/dp_20">
+        android:paddingStart="@dimen/dp_12"
+        android:paddingTop="@dimen/dp_12">
 
         <android.support.v7.widget.AppCompatTextView
             android:id="@+id/text_title"
@@ -28,8 +28,8 @@
             android:layout_weight="0.5"
             android:gravity="center"
             android:maxLines="1"
-            app:autoSizeTextType="uniform"
-            android:textSize="40sp" />
+            android:textSize="40sp"
+            app:autoSizeTextType="uniform" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -54,14 +54,33 @@
         </LinearLayout>
 
     </LinearLayout>
-    <ImageView
-        android:id="@+id/image_stars"
+
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="@dimen/dp_star"
-        android:layout_gravity="start|bottom"
-        android:src="@mipmap/star_5"
-        android:layout_marginStart="@dimen/dp_12"
-        android:layout_marginEnd="@dimen/dp_12"
-        android:layout_marginBottom="@dimen/dp_4"
-        android:scaleType="fitStart" />
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginLeft="5dp"
+        android:layout_weight="0.5"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/image_stars"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/dp_star"
+            android:layout_gravity="bottom"
+            android:layout_weight="1"
+            android:scaleType="fitStart"
+            android:src="@mipmap/star_5">
+
+        </ImageView>
+
+        <ImageView
+            android:id="@+id/image_done"
+            android:layout_width="@dimen/dp_24"
+            android:layout_height="@dimen/dp_24"
+            android:layout_gravity="end|bottom"
+            android:src="@mipmap/check"
+            android:visibility="invisible" />
+    </LinearLayout>
+
 </com.hearatale.phonics.ui.custom_view.RatioCardLayout>

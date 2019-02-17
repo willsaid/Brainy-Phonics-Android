@@ -4,12 +4,13 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
+import android.support.constraint.ConstraintSet;
 import android.support.v4.app.Fragment;
 import android.text.TextUtils;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 
@@ -22,8 +23,11 @@ import com.hearatale.phonics.ui.base.activity.ActivityMVP;
 import com.hearatale.phonics.ui.letter.letter_content.LetterContentFragment;
 import com.hearatale.phonics.ui.main.MainActivity;
 import com.hearatale.phonics.ui.quiz_puzzle.QuizPuzzleActivity;
+import com.hearatale.phonics.ui.simple_alphabet.SimpleAlphabetActivity;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -33,8 +37,17 @@ public class LetterActivity extends ActivityMVP<LetterPresenter, ILetter> implem
 
     private static int REQUEST_CODE = 1028;
 
+    @BindView(R.id.parent_layout)
+    ConstraintLayout parentLayout;
+
     @BindView(R.id.layout_action)
-    ViewGroup layoutAction;
+    View layoutAction;
+
+    @BindView(R.id.main_content)
+    FrameLayout mainContent;
+
+    @BindView(R.id.image_view_check)
+    ImageView imageCheck;
 
     @BindView(R.id.image_view_menu)
     ImageView imageViewMenu;
@@ -62,7 +75,6 @@ public class LetterActivity extends ActivityMVP<LetterPresenter, ILetter> implem
 
     int currentPositionWord = 0;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,7 +82,7 @@ public class LetterActivity extends ActivityMVP<LetterPresenter, ILetter> implem
         ButterKnife.bind(this);
         getArgument();
         initViews();
-
+//        layoutAction.setVisibility(View.GONE);
     }
 
     @Override
@@ -86,11 +98,19 @@ public class LetterActivity extends ActivityMVP<LetterPresenter, ILetter> implem
     private void initViews() {
 
         // init toolbar
-        layoutAction.setVisibility(mLetterModeDef == DifficultyDef.EASY ? View.INVISIBLE : View.VISIBLE);
+//        layoutAction.setVisibility(mLetterModeDef == DifficultyDef.EASY ? View.INVISIBLE : View.VISIBLE);
 
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            ConstraintSet constraintSet = new ConstraintSet();
+            constraintSet.clone(parentLayout);
+            constraintSet.centerHorizontally(layoutAction.getId(), mainContent.getId());
+            constraintSet.centerVertically(layoutAction.getId(), mainContent.getId());
+            constraintSet.applyTo(parentLayout);
+        }
 
         getSupportFragmentManager().beginTransaction().add(R.id.main_content, getLetterContentFragment()).commit();
 
+        imageCheck.setVisibility(View.INVISIBLE);
         imageViewMenu.setVisibility(View.VISIBLE);
         imageViewRepeat.setImageResource(R.mipmap.repeat);
 
@@ -105,10 +125,20 @@ public class LetterActivity extends ActivityMVP<LetterPresenter, ILetter> implem
     private void getArgument() {
         Intent intent = getIntent();
         if (intent == null) return;
-
         mLetterModeDef = intent.getIntExtra(Constants.Arguments.ARG_LETTER_MODE, 0);
         String letterText = intent.getStringExtra(Constants.Arguments.ARG_LETTER_TEXT);
         mLetterModels = mPresenter.getLetter().get(letterText.toUpperCase());
+
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            List<LetterModel> letters = new ArrayList<>();
+            Map<String, List<LetterModel>> letterMap = mPresenter.getLetter();
+            for (String letter: letterMap.keySet()) {
+                letters.add(letterMap.get(letter).get(0));
+            }
+            mLetterModels = letters;
+        }
+
+        currentPositionWord = letterText.charAt(0) - 'A';
 
         //Find index by sound id;
         String soundId = intent.getStringExtra(Constants.Arguments.ARG_SOUND_ID);
@@ -133,7 +163,7 @@ public class LetterActivity extends ActivityMVP<LetterPresenter, ILetter> implem
 
     @NonNull
     private LetterContentFragment getLetterContentFragment() {
-        LetterContentFragment fragment = LetterContentFragment.newInstance(mLetterModels.get(currentPositionWord));
+        LetterContentFragment fragment = LetterContentFragment.newInstance(mLetterModels.get(currentPositionWord), mLetterModeDef);
         fragment.setUpdateViewListener(new LetterContentFragment.UpdateViewListener() {
             @Override
             public void showButtonQuiz(boolean isShow) {
@@ -142,6 +172,7 @@ public class LetterActivity extends ActivityMVP<LetterPresenter, ILetter> implem
                 imageViewQuiz.setVisibility(isShow ? View.VISIBLE : View.INVISIBLE);
             }
         });
+
         return fragment;
     }
 
@@ -237,7 +268,14 @@ public class LetterActivity extends ActivityMVP<LetterPresenter, ILetter> implem
 
     @OnClick(R.id.image_view_menu)
     void backToAlphabetActivity() {
-        onBackPressed();
+        Intent intent = new Intent(LetterActivity.this, SimpleAlphabetActivity.class);
+        if (mLetterModeDef == DifficultyDef.EASY) {
+            intent.putExtra(Constants.Arguments.ARG_LETTER_MODE, DifficultyDef.EASY);
+        } else {
+            intent.putExtra(Constants.Arguments.ARG_LETTER_MODE, DifficultyDef.STANDARD);
+        }
+        pushIntent(intent);
+        finish();
     }
 
 

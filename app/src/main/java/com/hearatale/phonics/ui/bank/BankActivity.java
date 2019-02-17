@@ -23,7 +23,6 @@ import com.github.jinatonic.confetti.ConfettoGenerator;
 import com.github.jinatonic.confetti.confetto.BitmapConfetto;
 import com.github.jinatonic.confetti.confetto.Confetto;
 import com.hearatale.phonics.R;
-import com.hearatale.phonics.data.AppDataManager;
 import com.hearatale.phonics.data.Constants;
 import com.hearatale.phonics.service.AudioPlayerHelper;
 import com.hearatale.phonics.ui.base.activity.ActivityMVP;
@@ -88,6 +87,8 @@ public class BankActivity extends ActivityMVP<BankPresenter, IBank> implements I
 
     Handler mHandlerSchedule = new Handler();
 
+    private String appFeature;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,10 +96,10 @@ public class BankActivity extends ActivityMVP<BankPresenter, IBank> implements I
         ButterKnife.bind(this);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        mTotalGoldCount = mPresenter.getTotalGoldCount();
-        mTotalSilverCount = mPresenter.getTotalSilverCount();
-        mTotalGold = mTotalGoldCount + mTotalSilverCount / 2;
         getArgument();
+        mTotalGoldCount = mPresenter.getTotalGoldCount(appFeature);
+        mTotalSilverCount = mPresenter.getTotalSilverCount(appFeature);
+        mTotalGold = mTotalGoldCount + mTotalSilverCount / 2;
         prepareData();
         initViews();
 
@@ -289,6 +290,8 @@ public class BankActivity extends ActivityMVP<BankPresenter, IBank> implements I
             setTheme(R.style.Theme_Transparent);
             ImageHelper.blurImageView(blurBitmap, imageBlur);
         }
+
+        appFeature = getIntent().getStringExtra("APP_FEATURE");
 
     }
 

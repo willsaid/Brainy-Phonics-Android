@@ -2,6 +2,7 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/parent_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".ui.letter.LetterActivity">
@@ -51,9 +52,9 @@
                 android:id="@+id/button_prev"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="@dimen/dp_16"
                 android:layout_marginTop="@dimen/dp_4"
                 android:background="@null"
+                android:padding="@dimen/dp_16"
                 android:src="@mipmap/back" />
         </LinearLayout>
 
@@ -69,11 +70,11 @@
 
             <ImageButton
                 android:id="@+id/button_next"
-                android:layout_marginTop="@dimen/dp_4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="@dimen/dp_16"
+                android:layout_marginTop="@dimen/dp_4"
                 android:background="@null"
+                android:padding="@dimen/dp_16"
                 android:rotation="180"
                 android:src="@mipmap/back" />
         </LinearLayout>

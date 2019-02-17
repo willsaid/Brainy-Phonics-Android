@@ -4,7 +4,6 @@ import com.hearatale.phonics.data.model.phonics.letters.LetterModel;
 import com.hearatale.phonics.data.model.phonics.letters.PuzzlePieceModel;
 import com.hearatale.phonics.data.model.phonics.letters.WordModel;
 import com.hearatale.phonics.data.model.typedef.DifficultyDef;
-import com.hearatale.phonics.ui.base.activity.IPresenterMVP;
 
 import java.util.List;
 
@@ -30,5 +29,9 @@ public interface IQuizPuzzlePresenter {
     int getStarConsecutive(String displayLetter);
 
     void saveStarConsecutive(String displayLetter, int starConsecutive);
+
+    public void setAnswersWithoutMistake(String sightWord, int answersWithoutMistake);
+
+    public int getAnswersWithoutMistake(String sightWord);
 
 }

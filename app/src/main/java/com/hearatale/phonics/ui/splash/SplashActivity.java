@@ -1,11 +1,12 @@
 package com.hearatale.phonics.ui.splash;
 
 import android.content.Intent;
-import android.os.Handler;
 import android.os.Bundle;
+import android.os.Handler;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
 
-import com.hearatale.phonics.BuildConfig;
 import com.hearatale.phonics.R;
 import com.hearatale.phonics.data.Constants;
 import com.hearatale.phonics.data.model.typedef.DifficultyDef;
@@ -28,6 +29,9 @@ public class SplashActivity extends BaseActivity {
 
     @BindView(R.id.image_artwork)
     ImageView imageArtwork;
+
+    @BindView(R.id.linkText)
+    TextView linkText;
 
     @MainDef
     int mMainDef = MainDef.BRAINY_PHONICS;
@@ -54,6 +58,7 @@ public class SplashActivity extends BaseActivity {
                 String path = Config.SOUND_PATH + "brainy phonics";
                 AudioPlayerHelper.getInstance().playAudio(path);
                 imageArtwork.setImageResource(R.mipmap.brainy_phonics_logo);
+                linkText.setVisibility(View.VISIBLE);
                 runnableDelay = new Runnable() {
                     @Override
                     public void run() {
